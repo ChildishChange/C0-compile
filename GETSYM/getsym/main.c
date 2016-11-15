@@ -139,7 +139,27 @@ int prog()
     return 0;
 }
 
+int constdec()
+{
+    //调用前已经确认是const了
+    sym = getsym();
+    if(sym==intsym){
+        sym = getsym();//此处应为标识符
+        //此处应该压入符号表
+        if(getsym()!=becomes)//赋值
+        {
+            //报错
+        }
+        sym = getsym();
 
+
+    }
+    else if(sym==floatsym){}
+    else if(sym==charsym){}
+    else{
+        //报错
+    }
+}
 
 int getsym(FILE *IN)
 {
