@@ -14,7 +14,9 @@
 //TODO 添加。。不知道欸
 //TODO 添加一系列全局变量
 char LineBuffer[200];//行缓冲
-char token[100];//用于存储目前读入的单词
+
+int Line=0;
+int Column=0;
 int linelength = 1;
 int curindex = 0;
 
@@ -34,20 +36,21 @@ const char *_symbol[]={ "constsym","intsym","floatsym","charsym","voidsym","retu
                         "becomes","equal","greathan","noless","lessthan","nomore","noequal","semicolon","comma"};
 
 FILE *IN, *OUT;
-char ch;//如果是单个字符
+
+char token[100];//用于存储目前读入的单词
 int integer;//如果读入了数字
 float floatnum;//如果读入了实数
-
+char ch;//如果是单个字符
 
 int sym;//用于保存每次getsym的返回值
 
 char getch();
-
 int getsym();
+int constdec();
 /*
 //语法分析需要添加的函数
 int prog();
-int constdec();
+
 int variadec();
 int funct();
 int functiondec();
@@ -98,21 +101,20 @@ int main()
     }
 
     printf("VALUE TYPE NO\n");
+
     while(!feof(IN))
     {
         sym = getsym();
-        if(sym==-1)
-            printf("%s error %d\n",token,sym);
-		else if(sym==-2)
-			;
-        else
-            fprintf(OUT,"%s %s %d\n",token,_symbol[sym],sym);
+        if(sym==constsym)
+            constdec();
     }
-
 
 
     return 0;
 }
+
+
+
 /*
 int prog()
 {
@@ -142,28 +144,105 @@ int prog()
     return 0;
 }
 
+*/
+
 int constdec()
 {
-    //调用前已经确认是const了
-    sym = getsym(IN);
-    if(sym==intsym){
-        sym = getsym(IN);//此处应为标识符
-        //此处应该压入符号表
-        if(getsym(IN)!=becomes)//赋值
+    while(sym==constsym)
+    {
+    //在调用这个函数之前已经get了一个sym，并因为sym是const所以才会进入这个函数
+        sym = getsym();
+        switch (sym)
         {
-            //报错
+            case intsym://case里应该有一个循环
+                sym = getsym();//获取标识符
+                printf("at %d:%d declare an integer named : %s",Line,Column,token);
+                //查表，函数内有报错吧 ，大概
+                //进表
+                sym = getsym();
+                if(sym!=becomes)
+                    ;//报错
+                else
+                {
+                    sym = getsym();
+                    if(sym!=integersym)
+                        ;//报错
+                    else
+                    {
+                        //填表
+                        printf(" and its value is : %d\n",integer);
+                        sym = getsym();
+                        if(sym == comma){}
+                        else if(sym == semicolon){continue;}
+                        else
+                        {
+                            //报错
+                        }
+                    }
+                }
+                break;
+            case floatsym:
+                sym = getsym();
+                printf("at %d:%d declare a float named : %s",Line,Column,token);
+                //查表，函数内有报错吧 ，大概
+                //进表
+                sym = getsym();
+                if(sym!=becomes)
+                    ;//报错
+                else
+                {
+                    sym = getsym();
+                    if(sym!=floatsym)
+                        ;//报错
+                    else
+                    {
+                        //填表
+                        printf(" and its value is : %f\n",floatnum);
+                        sym = getsym();
+                        if(sym == comma){}
+                        else if(sym == semicolon){continue;}
+                        else
+                        {
+                            //报错
+                        }
+                    }
+                }
+                break;
+            case charsym:
+                sym = getsym();//获取标识符
+                printf("at %d:%d declare a char named : %s",Line,Column,token);
+                //查表，函数内有报错吧 ，大概
+                //进表
+                sym = getsym();
+                if(sym!=becomes)
+                    ;//报错
+                else
+                {
+                    sym = getsym();
+                    if(sym!=integersym)
+                        ;//报错
+                    else
+                    {
+                        //填表
+                        printf(" and its value is : %c\n",cha);
+                        sym = getsym();
+                        if(sym == comma){}
+                        else if(sym == semicolon){continue;}
+                        else
+                        {
+                            //报错
+                        }
+                    }
+                }
+                break;
+            default:
+                //报错
+                break;
+
         }
-        sym = getsym(IN);
-
-
-    }
-    else if(sym==floatsym){}
-    else if(sym==charsym){}
-    else{
-        //报错
     }
 }
-*/
+
 char getch()
 {
 
@@ -171,8 +250,10 @@ char getch()
     {
         while(1)
         {
+
             memset(LineBuffer,0,200);//清空
             fgets(LineBuffer,200,IN);//再读一行
+            Line++;
             if(LineBuffer[0]=='\n')
                 continue;
             else
@@ -182,6 +263,7 @@ char getch()
         linelength = strlen(LineBuffer);
         curindex = 0;
     }
+    Column = curindex;
     return LineBuffer[curindex++];
 
 }
