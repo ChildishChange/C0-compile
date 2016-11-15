@@ -13,8 +13,10 @@
 //TODO 添加错误处理
 //TODO 添加。。不知道欸
 //TODO 添加一系列全局变量
-char LineBuffer[200];
-
+char LineBuffer[200];//行缓冲
+char token[100];//用于存储目前读入的单词
+int linelength = 1;
+int curindex = 0;
 
 
 const char *rWord[] = {"const","int","float","char","void","return","for","while","if","else","printf" ,"scanf"};
@@ -31,17 +33,18 @@ const char *_symbol[]={ "constsym","intsym","floatsym","charsym","voidsym","retu
                         "add","minus","multi","divi",
                         "becomes","equal","greathan","noless","lessthan","nomore","noequal","semicolon","comma"};
 
-
+FILE *IN, *OUT;
 char ch;//如果是单个字符
 int integer;//如果读入了数字
 float floatnum;//如果读入了实数
 
+
 int sym;//用于保存每次getsym的返回值
 
-char token[100];
+char getch();
 
-int getsym(FILE *IN);
-
+int getsym();
+/*
 //语法分析需要添加的函数
 int prog();
 int constdec();
@@ -69,11 +72,11 @@ int term();
 int factor();
 int error();
 
-
+*/
 //
 int main()
 {
-	FILE *IN, *OUT;
+
     char file_addr[100];
     char buffer[100];
 
@@ -97,7 +100,7 @@ int main()
     printf("VALUE TYPE NO\n");
     while(!feof(IN))
     {
-        sym = getsym(IN);
+        sym = getsym();
         if(sym==-1)
             printf("%s error %d\n",token,sym);
 		else if(sym==-2)
@@ -110,15 +113,15 @@ int main()
 
     return 0;
 }
-
+/*
 int prog()
 {
     char *ptr;
-    sym = getsym();
+    sym = getsym(IN);
     while(sym==constsym)
     {
         constdec();//常量定义最后一个字符是;，应此读到这个就可以结束一次常量说明了
-        sym = getsym();
+        sym = getsym(IN);
     }
     while(sym==intsym||sym==floatsym||sym==charsym)//可能是函数定义也可能是变量定义。。GG
     {//解决方法是在这一行的缓冲里查找小括号？或者查找等于号
@@ -126,14 +129,14 @@ int prog()
         if(ptr){break;}
         else{
             variadec();//变量定义最后一个字符是；
-            sym = getsym();
+            sym = getsym(IN);
         }
         //暂时不添加错误处理
     }
     while(sym==intsym||sym==floatsym||sym==charsym||sym==voidsym)
     {
          funct();//最后一个字符是}
-         sym = getsym();
+         sym = getsym(IN);
          //当读入main函数后，末尾还有非空字符，则报错
     }
     return 0;
@@ -142,15 +145,15 @@ int prog()
 int constdec()
 {
     //调用前已经确认是const了
-    sym = getsym();
+    sym = getsym(IN);
     if(sym==intsym){
-        sym = getsym();//此处应为标识符
+        sym = getsym(IN);//此处应为标识符
         //此处应该压入符号表
-        if(getsym()!=becomes)//赋值
+        if(getsym(IN)!=becomes)//赋值
         {
             //报错
         }
-        sym = getsym();
+        sym = getsym(IN);
 
 
     }
@@ -160,8 +163,30 @@ int constdec()
         //报错
     }
 }
+*/
+char getch()
+{
 
-int getsym(FILE *IN)
+    if(linelength==(curindex+1))//读完一行
+    {
+        while(1)
+        {
+            memset(LineBuffer,0,200);//清空
+            fgets(LineBuffer,200,IN);//再读一行
+            if(LineBuffer[0]=='\n')
+                continue;
+            else
+                break;
+        }
+        LineBuffer[strlen(LineBuffer)]='\0';
+        linelength = strlen(LineBuffer);
+        curindex = 0;
+    }
+    return LineBuffer[curindex++];
+
+}
+
+int getsym()
 {
 
 	int sym_index = 0;//token_index
@@ -171,10 +196,10 @@ int getsym(FILE *IN)
 
     memset(token,0,100);//清空token
 
-    ch = fgetc(IN);//
+    ch = getch();//
     while(ch=='\n'||ch=='\t'||ch==' ')//去除单词之间的空字符
     {
-        ch = fgetc(IN);
+        ch = getch();
     }
     if(feof(IN))
     {
@@ -186,17 +211,17 @@ int getsym(FILE *IN)
     {
         token[sym_index++] = ch;
         token[sym_index] = '\0';
-        ch = fgetc(IN);
+        ch = getch();
 
         while(isalnum(ch)||ch=='_')
         {
             token[sym_index++] = ch;
             token[sym_index] = '\0';
-            ch = fgetc(IN);
+            ch = getch();
         }
         //todo 要分开标识符或者保留字
-        fseek(IN,-1L,SEEK_CUR);
 
+        curindex--;
         for(i = 0;i<RNUM;i++)
         {
             if(strcmp(token,rWord[i])==0)
@@ -216,24 +241,24 @@ int getsym(FILE *IN)
     {
         token[sym_index++] = ch;
         token[sym_index] = '\0';
-        ch = fgetc(IN);
+        ch = getch();
 
         while(isdigit(ch))
         {
             token[sym_index++] = ch;
             token[sym_index] = '\0';
-            ch = fgetc(IN);
+            ch = getch();
         }
         if(ch=='.')
         {
             token[sym_index++] = ch;
             token[sym_index] = '\0';
-            ch = fgetc(IN);
+            ch = getch();
             while(isdigit(ch))
             {
                 token[sym_index++] = ch;
                 token[sym_index] = '\0';
-                ch = fgetc(IN);
+                ch =getch();
             }
             if(!isdigit(token[sym_index-1]))
             {
@@ -241,12 +266,12 @@ int getsym(FILE *IN)
                 token[sym_index] = '\0';
             }
             floatnum = atof(token);
-            fseek(IN,-1L,SEEK_CUR);
+            curindex--;
             return floatsym;
         }
         else
         {
-            fseek(IN,-1L,SEEK_CUR);
+            curindex--;
             integer = atoi(token);
             return integersym;
 
@@ -259,12 +284,12 @@ int getsym(FILE *IN)
         switch (ch)
         {
 			case '"':
-				ch = fgetc(IN);
+				ch = getch();
                 while(ch==32||ch==33||(ch>=35&&ch<=126))
 				{
 					token[sym_index++] = ch;
 					token[sym_index] = '\0';
-					ch = fgetc(IN);
+					ch = getch();
 					//todo:添加文件末尾
 				}
 				if(ch=='"')
@@ -278,13 +303,13 @@ int getsym(FILE *IN)
 				}
 
 			case '\'':
-				ch = fgetc(IN);
+				ch = getch();
 				if(isalnum(ch)||ch=='+'||ch=='-'||ch=='*'||ch=='/')
 				{
 
 					token[sym_index++] = ch;
 					token[sym_index] = '\0';
-					ch = fgetc(IN);
+					ch = getch();
 				}
 
 				if(ch=='\'')
@@ -341,7 +366,7 @@ int getsym(FILE *IN)
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
 
-				ch = fgetc(IN);
+				ch = getch();
 				if(ch=='=')
 				{
                     token[sym_index++] = ch;
@@ -351,13 +376,13 @@ int getsym(FILE *IN)
 				}
 				else
 				{
-					fseek(IN,-1L,1);
+					curindex--;
 					return -1;
 				}
             case '=':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-                ch = fgetc(IN);
+                ch = getch();
 				if(ch=='=')
 				{
 				    token[sym_index++] = ch;
@@ -367,13 +392,13 @@ int getsym(FILE *IN)
 				}
 				else
                 {
-                    fseek(IN,-1L,SEEK_CUR);
+                    curindex--;
 					return becomes;
                 }
             case '<':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-				ch = fgetc(IN);
+				ch = getch();
 				if(ch=='=')
 				{
 				    token[sym_index++] = ch;
@@ -382,14 +407,14 @@ int getsym(FILE *IN)
 				}
 				else
                 {
-                    fseek(IN,-1L,SEEK_CUR);
+                    curindex--;
                     return lessthan;
                 }
 
             case '>':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-				ch = fgetc(IN);
+				ch = getch();
 				if(ch=='=')
 				{
 				    token[sym_index++] = ch;
@@ -398,7 +423,7 @@ int getsym(FILE *IN)
 				}
 				else
                 {
-                    fseek(IN,-1L,SEEK_CUR);
+                   curindex--;
                     return greathan;
                 }
 
