@@ -6,6 +6,16 @@
 #define line_leng 100
 #define RNUM 12
 
+
+
+//TODO 修改FILE IN 为全局变量
+//TODO 添加getch，并修改为行缓冲
+//TODO 添加错误处理
+//TODO 添加。。不知道欸
+//TODO 添加一系列全局变量
+
+
+
 const char *rWord[] = {"const","int","float","char","void","return","for","while","if","else","printf" ,"scanf"};
 
 const enum symbol    {constsym = 0,intsym,floatsym,charsym,voidsym,returnsym,forsym,whilesym,ifsym,elsesym,printfsym,scanfsym,
@@ -19,12 +29,44 @@ const char *_symbol[]={ "constsym","intsym","floatsym","charsym","voidsym","retu
                         "lparent","rparent","lbracket","rbracket","lbrace","rbrace",
                         "add","minus","multi","divi",
                         "becomes","equal","greathan","noless","lessthan","nomore","noequal","semicolon","comma"};
+
+
 char ch;//如果是单个字符
 int integer;//如果读入了数字
 float floatnum;//如果读入了实数
+
 char token[100];
+
 int getsym(FILE *IN);
 
+//语法分析需要添加的函数
+int constdec();
+int vairadec();
+int funct();
+int functiondec();
+int funtionret();
+int functionident();
+int parameterlist();
+int compoundstatement();
+int statement_s();
+int statement();
+int conditionstatement();
+int condition();
+int forstatement();
+int whilestatement();
+int functwithret();
+int functwithoutret();
+int assignment();
+int readstatement();
+int writestatement();
+int retstatement();
+int expression();
+int term();
+int factor();
+int error();
+
+
+//
 int main()
 {
 	FILE *IN, *OUT;
