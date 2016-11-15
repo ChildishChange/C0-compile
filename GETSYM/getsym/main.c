@@ -192,7 +192,7 @@ int constdec()
                 else
                 {
                     sym = getsym();
-                    if(sym!=floatsym)
+                    if(sym!=real)
                         ;//±¨´í
                     else
                     {
@@ -219,12 +219,12 @@ int constdec()
                 else
                 {
                     sym = getsym();
-                    if(sym!=integersym)
+                    if(sym!=cha)
                         ;//±¨´í
                     else
                     {
                         //Ìî±í
-                        printf(" and its value is : %c\n",cha);
+                        printf(" and its value is : %c\n",ch);
                         sym = getsym();
                         if(sym == comma){}
                         else if(sym == semicolon){continue;}
@@ -349,7 +349,7 @@ int getsym()
             }
             floatnum = atof(token);
             curindex--;
-            return floatsym;
+            return real;
         }
         else
         {
@@ -396,6 +396,7 @@ int getsym()
 
 				if(ch=='\'')
 				{
+				    ch = token[sym_index-1];
 				    return cha;
                 }
 				else
