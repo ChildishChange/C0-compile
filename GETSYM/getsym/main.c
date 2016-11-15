@@ -155,85 +155,92 @@ int constdec()
         switch (sym)
         {
             case intsym://case里应该有一个循环
-                sym = getsym();//获取标识符
-                printf("at %d:%d declare an integer named : %s",Line,Column,token);
-                //查表，函数内有报错吧 ，大概
-                //进表
-                sym = getsym();
-                if(sym!=becomes)
-                    ;//报错
-                else
-                {
-                    sym = getsym();
-                    if(sym!=integersym)
-                        ;//报错
-                    else
-                    {
-                        //填表
-                        printf(" and its value is : %d\n",integer);
-                        sym = getsym();
-                        if(sym == comma){}
-                        else if(sym == semicolon){continue;}
-                        else
-                        {
-                            //报错
-                        }
-                    }
-                }
+				do{
+					sym = getsym();//获取标识符
+					printf("at %d:%d declare an integer named : %s",Line,Column-strlen(token),token);
+					//查表，函数内有报错吧 ，大概
+					//进表
+					sym = getsym();
+					if(sym!=becomes)
+						;//报错
+					else
+					{
+						sym = getsym();
+						if(sym!=integersym)
+							;//报错
+						else
+						{
+							//填表
+							printf(" and its value is : %d\n",integer);
+							sym = getsym();
+							if(sym == comma){}
+							else if(sym == semicolon){break;}
+							else
+							{
+								//报错
+							}
+						}
+					}
+				}while(sym==comma);
                 break;
             case floatsym:
-                sym = getsym();
-                printf("at %d:%d declare a float named : %s",Line,Column,token);
-                //查表，函数内有报错吧 ，大概
-                //进表
-                sym = getsym();
-                if(sym!=becomes)
-                    ;//报错
-                else
-                {
+                do{
                     sym = getsym();
-                    if(sym!=real)
+                    printf("at %d:%d declare a float named : %s",Line,Column-strlen(token),token);
+                    //查表，函数内有报错吧 ，大概
+                    //进表
+                    sym = getsym();
+                    if(sym!=becomes)
                         ;//报错
                     else
                     {
-                        //填表
-                        printf(" and its value is : %f\n",floatnum);
                         sym = getsym();
-                        if(sym == comma){}
-                        else if(sym == semicolon){continue;}
+                        if(sym!=real)
+                            ;//报错
                         else
                         {
-                            //报错
+                            //填表
+                            printf(" and its value is : %f\n",floatnum);
+                            sym = getsym();
+                            if(sym == comma){}
+                            else if(sym == semicolon){break;}
+                            else
+                            {
+                                //报错
+                            }
                         }
                     }
-                }
+                }while(sym==comma);
                 break;
             case charsym:
-                sym = getsym();//获取标识符
-                printf("at %d:%d declare a char named : %s",Line,Column,token);
-                //查表，函数内有报错吧 ，大概
-                //进表
-                sym = getsym();
-                if(sym!=becomes)
-                    ;//报错
-                else
-                {
+                do{
+                    sym = getsym();//获取标识符
+                    printf("at %d:%d declare a char named : %s",Line,Column-strlen(token),token);
+                    //查表，函数内有报错吧 ，大概
+                    //进表
                     sym = getsym();
-                    if(sym!=cha)
+                    if(sym!=becomes)
                         ;//报错
                     else
                     {
-                        //填表
-                        printf(" and its value is : %c\n",ch);
                         sym = getsym();
-                        if(sym == comma){}
-                        else if(sym == semicolon){continue;}
+                        if(sym!=cha)
+                            ;//报错
                         else
                         {
-                            //报错
+                            //填表
+                            printf(" and its value is : %c\n",ch);
+                            sym = getsym();
+                            if(sym == comma){}
+                            else if(sym == semicolon){break;}
+                            else
+                            {
+                                //报错
+                            }
                         }
                     }
-                }
+
+                }while(sym==comma);
                 break;
             default:
                 //报错
