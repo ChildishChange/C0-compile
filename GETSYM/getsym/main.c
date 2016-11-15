@@ -13,6 +13,7 @@
 //TODO 添加错误处理
 //TODO 添加。。不知道欸
 //TODO 添加一系列全局变量
+char LineBuffer[200];
 
 
 
@@ -35,13 +36,16 @@ char ch;//如果是单个字符
 int integer;//如果读入了数字
 float floatnum;//如果读入了实数
 
+int sym;//用于保存每次getsym的返回值
+
 char token[100];
 
 int getsym(FILE *IN);
 
 //语法分析需要添加的函数
+int prog();
 int constdec();
-int vairadec();
+int variadec();
 int funct();
 int functiondec();
 int funtionret();
@@ -72,7 +76,7 @@ int main()
 	FILE *IN, *OUT;
     char file_addr[100];
     char buffer[100];
-    int sym;
+
     OUT = fopen("D:\\b.txt","w");
     while(1)
     {
@@ -106,6 +110,36 @@ int main()
 
     return 0;
 }
+
+int prog()
+{
+    char *ptr;
+    sym = getsym();
+    while(sym==constsym)
+    {
+        constdec();//常量定义最后一个字符是;，应此读到这个就可以结束一次常量说明了
+        sym = getsym();
+    }
+    while(sym==intsym||sym==floatsym||sym==charsym)//可能是函数定义也可能是变量定义。。GG
+    {//解决方法是在这一行的缓冲里查找小括号？或者查找等于号
+        ptr = strchr(LineBuffer,'(');//这一行如果有（说明这个是有返回值函数定义
+        if(ptr){break;}
+        else{
+            variadec();//变量定义最后一个字符是；
+            sym = getsym();
+        }
+        //暂时不添加错误处理
+    }
+    while(sym==intsym||sym==floatsym||sym==charsym||sym==voidsym)
+    {
+         funct();//最后一个字符是}
+         sym = getsym();
+         //当读入main函数后，末尾还有非空字符，则报错
+    }
+    return 0;
+}
+
+
 
 int getsym(FILE *IN)
 {
