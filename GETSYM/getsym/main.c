@@ -48,6 +48,12 @@ int variadec();
 int functwith();
 int functwithout();
 int paralist();
+int compoundstatement();
+int statement_s();
+int ifcondition();
+int expression();
+int term();
+int factor();
 /*
 //语法分析需要添加的函数
 int prog();
@@ -58,8 +64,8 @@ int functiondec();
 int funtionret();
 int functionident();
 int parameterlist();
-int compoundstatement();
-int statement_s();
+
+
 int statement();
 int conditionstatement();
 int condition();
@@ -72,8 +78,8 @@ int readstatement();
 int writestatement();
 int retstatement();
 int expression();
-int term();
-int factor();
+
+
 int error();
 
 */
@@ -736,6 +742,11 @@ int functwith(int kind,char name[])
 
         //这里是处理复合语句的
         //读大括号
+        sym = getsym();
+        if(sym!=lbrace)
+            printf("there should be a brace!");
+        compoundstatement();
+
         //读复合语句
         //读第二个大括号
 
@@ -808,4 +819,90 @@ int paralist()
         else
             printf("undefined type!\n");//报错
     }while(sym!=rparent);//当读入其他符号是要报错的。。
+}
+
+
+int compoundstatement()
+{
+    sym = getsym();
+    if(sym==constsym)
+    {
+        constdec();
+    }
+    variadec();
+    statement_s();
+
+}
+int statement_s()
+{
+    switch (sym)
+    {
+        case ifsym:
+            ifcondition();
+            break;
+        case whilesym:
+            whilestatement();
+            break;
+        case forsym:
+            forstatement();
+            break;
+        case identsym://函数调用或者赋值语句
+            break;
+        case scanfsym:
+            break;
+        case printfsym:
+            break;
+        case returnsym:
+            break;
+        default :
+            printf("what the fuck is this?\n");
+            break;
+    }
+}
+
+int ifcondition()//因为是读入了一个if才判断出来进入这个分支
+{
+    sym = getsym();
+    if(sym!=lparent)
+        printf("there should be a left parenthese\n");
+    expression();
+}
+
+int expression()
+{
+    sym = getsym();
+    if(sym==minus||sym==add)
+    {
+        term();
+    }
+
+
+}
+
+int term()
+{
+    factor();
+}
+
+int factor()
+{
+
+    sym = getsym();
+    switch (sym)
+    {
+        case identsym://可能是变量或者数组或者函数调用
+            break;
+        case minus;//其实这里应该是数
+        case add:
+            break;
+        case cha://字符
+            break;
+        case lparent://括号表达式
+            expression();
+            break;
+        default :
+            printf("fuck you!\n");//
+            break;
+    }
+
 }
