@@ -757,8 +757,8 @@ int functwithout(char name[])
         getsym();//读标识符
   //      memset(name,0,100);
         strcpy(name,token);
-        if(getsym()!=lparent)//读括号
-            printf("此处应为左括号！\n");
+    //    if(getsym()!=lparent)//读括号
+      //      printf("此处应为左括号！\n");
 
     }while(sym==voidsym);
     kind = sym;//设置type
@@ -805,12 +805,13 @@ int valuelist()
     int symtmp=0;
     do
     {
-        symtmp = sym;
+           // symtmp = sym;
         expression();
         symtmp = getsym();
         sym = symtmp;
         if(symtmp==comma)
             sym = getsym();
+
     }
     while(symtmp==comma);
     printf("out val list\n");
@@ -959,6 +960,7 @@ int statement()//这个是语句
             sym = getsym();//于都
             break;
         case semicolon:
+            sym = getsym();
             break;
         case lbrace:
             printf("kaishichuliyujulie\n");
@@ -1075,7 +1077,7 @@ int condition()
 	if(sym>=equal&&sym<=noequal)
         printf("this is a %s\n",_symbol[sym]);
     sym = getsym();
-    printf("%d\n",integer);
+ //   printf("%d\n",integer);
     expression();
     printf("out condition\n");
 
@@ -1106,7 +1108,13 @@ int term()//调用term前预读了一个
 {
     printf("enter term\n");
     do{
-        factor();
+        if(sym==divi||sym==multi)
+        {
+            sym = getsym();
+            factor();
+        }
+        else
+            factor();
       //  sym = getsym();//*/
      // getsym();//factor的预读
     }while(sym==divi||sym==multi);//如果不是*/就相当于预读了两个
@@ -1130,9 +1138,13 @@ int factor()
             {
                 sym = getsym();
                 if(sym==rparent)
+                {
+                    printf("calling a function\n");
                     break;
+                }
                 else
                 {
+                    printf("calling a function\n");
                     valuelist();
                     //值参数表
                 }
@@ -1141,7 +1153,7 @@ int factor()
             {
                 sym = getsym();
                 expression();
-
+            //    sym = getsym();
 
             }
             else//变量啦
