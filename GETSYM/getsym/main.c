@@ -8,11 +8,8 @@
 
 
 
-//TODO 修改FILE IN 为全局变量
-//TODO 添加getch，并修改为行缓冲
 //TODO 添加错误处理
-//TODO 添加。。不知道欸
-//TODO 添加一系列全局变量
+//TODO 添加实数处理
 char LineBuffer[200];//行缓冲
 
 int Line=0;
@@ -150,8 +147,10 @@ int prog()
 
 */
 
-int constdec()
+int constdec()//处理符号
 {
+
+    int sign = 1;
     while(sym==constsym)
     {
     //在调用这个函数之前已经get了一个sym，并因为sym是const所以才会进入这个函数
@@ -170,12 +169,18 @@ int constdec()
 					else
 					{
 						sym = getsym();
-						if(sym!=integersym)
-							;//报错
-						else
+						if(sym == integersym||sym == minus||sym==add)
 						{
+						    if(sym!=integersym)
+                            {
+                                if(sym==minus)
+                                    sign*=-1;
+                                sym = getsym();
+
+                            }
 							//填表
-							printf(" and its value is : %d\n",integer);
+							printf(" and its value is : %d\n",integer*sign);
+							sign = 1;
 							sym = getsym();
 							if(sym == comma){}
 							else if(sym == semicolon){break;}
@@ -184,6 +189,8 @@ int constdec()
 								//报错
 							}
 						}
+						else
+                            ;//报错
 					}
 				}while(sym==comma);
 				sym = getsym();
@@ -200,12 +207,21 @@ int constdec()
                     else
                     {
                         sym = getsym();
-                        if(sym!=real)
-                            ;//报错
-                        else
+                        if(sym==real||sym==minus||sym==add||sym==integersym)
                         {
+                            while(sym!=real&&sym!=integersym)
+                            {
+                                if(sym==minus)
+                                    sign*=-1;
+                                sym = getsym();
+                            }
                             //填表
-                            printf(" and its value is : %f\n",floatnum);
+                            //此处要根据sym填表
+                            if(sym==integersym)
+                                printf(" and its value is : %d\n",integer*sign);
+                            else
+                                printf(" and its value is : %f\n",floatnum*sign);
+                            sign = 1;
                             sym = getsym();
                             if(sym == comma){}
                             else if(sym == semicolon){break;}
@@ -214,6 +230,8 @@ int constdec()
                                 //报错
                             }
                         }
+                        else
+                            ;//报错
                     }
                 }while(sym==comma);
                 sym = getsym();
