@@ -54,36 +54,7 @@ int ifcondition();
 int expression();
 int term();
 int factor();
-/*
-//语法分析需要添加的函数
-int prog();
 
-
-
-int functiondec();
-int funtionret();
-int functionident();
-int parameterlist();
-
-
-int statement();
-int conditionstatement();
-int condition();
-int forstatement();
-int whilestatement();
-int functwithret();
-int functwithoutret();
-int assignment();
-int readstatement();
-int writestatement();
-int retstatement();
-int expression();
-
-
-int error();
-
-*/
-//
 int main()
 {
     char *ptr;
@@ -834,6 +805,8 @@ int compoundstatement()
 
 }
 int statement_s()
+
+int statement()//这个是语句
 {
     switch (sym)
     {
@@ -847,6 +820,19 @@ int statement_s()
             forstatement();
             break;
         case identsym://函数调用或者赋值语句，也可能是因子。。这就很尴尬了
+            sym = getsym();
+            if(sym == lbracket)//数组
+            else if(sym == lparent)//函数
+            {
+
+            }
+            else if(sym == becomes)//赋值
+            {
+                 sym = getsym();
+               expression();//这里没有预读
+            }
+            else
+                ;//ERROR
             break;
         case scanfsym:
             scanfstatement();
@@ -855,10 +841,25 @@ int statement_s()
                 printf("scanf 处应为分号\n");
             break;
         case printfsym:
+            printfstatement();
             break;
         case returnsym:
+            sym = getsym();
+            if(sym==semicolon);
+                ;
+            else if(sym == lparent)
+            {
+                sym = getsym();
+
+                expression();//这里没预读
+            }
+            else
+                ;//baocuo
+
             break;
         case semicolon:
+            break;
+        case lbrace:
             break;
         default :
             printf("what the fuck is this?\n");
@@ -895,12 +896,53 @@ int scanfstatement()
     }
 }
 
-int ifcondition()//因为是读入了一个if才判断出来进入这个分支
+int printfstatement()//理论上printf也能写完了
 {
     sym = getsym();
+    if(sym==lparent)//左括号
+    {
+        sym = getsym();//字符串还是表达式
+        if(sym==str)
+        {
+            printf("这是个字符串\n");
+            sym = getsym();
+            if(sym==comma)
+            {
+                sym = getsym();
+                expression();//这里预读
+            }
+            else if(sym==rparent)
+            {
+                return;
+            }
+            else
+                ;//报错
+        }
+        else
+            expression();//这里的预读了
+    }
+    else//没有左括号
+        ;//ERROR
+}
+
+int ifcondition()//因为是读入了一个if才判断出来进入这个分支
+{
+    sym = getsym();//左括号
     if(sym!=lparent)
+    {
         printf("there should be a left parenthese\n");
+       // expression();
+    }
     expression();
+    sym = getsym();
+    if(sym!=rparent)
+        ;
+    statement();
+    sym = getsym();
+    if(sym == elsesym)
+    {
+        statement();
+    }
 }
 
 int expression()
