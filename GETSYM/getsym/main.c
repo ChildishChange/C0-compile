@@ -104,15 +104,20 @@ int main()
 
     printf("VALUE TYPE NO\n");
 
-        sym = getsym();
-        if(sym==constsym)
-       {
-           constdec();
-       }
+    sym = getsym();
+    if(sym==constsym)
+    {
+        constdec();
+    }
+    variadec();
+    if(sym == voidsym)
+    {
+        getsym();
+        strcpy(buffer,token);
+        getsym();
+        functwithout(buffer);
 
-            variadec();
-
-
+    }
     return 0;
 }
 
@@ -705,7 +710,7 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
     }
 
 }
-
+//当读到左括号才调用这个函数
 int functwith(int kind,char name[])
 {
     while(kind>=1&&kind<=3)
@@ -727,19 +732,52 @@ int functwith(int kind,char name[])
                 break;
 
         }
-       sym = getsym();
+
+
+        //这里是处理复合语句的
+        //读大括号
+        //读复合语句
+        //读第二个大括号
+
+
+       sym = getsym();//读返回值
        kind = sym;
        memset(name,0,100);
-       sym = getsym();
-       strcpy(name,token);
-       getsym();
+       sym = getsym();//读标识符
+       strcpy(name,token);//这是新的标识符
+       getsym();//读左括号
 
     }
+    if(kind == voidsym)
+        functwithout(name);
 
 }
 
-int functwithout()
+int functwithout(char name[])
 {
+    int kind;
+    do{
+
+        //
+        printf("function named \"%s\" without return\n",name);
+
+
+        paralist();
+        sym = getsym();//读void
+   //     printf("sym:%d\n",sym);
+        getsym();//读标识符
+  //      memset(name,0,100);
+        strcpy(name,token);
+        if(getsym()!=lparent)//读括号
+            printf("此处应为左括号！\n");
+
+    }while(sym==voidsym);
+    kind = sym;//设置type
+//    strcpy(name,token);
+
+    functwith(kind,name);
+
+
 
 }
 
