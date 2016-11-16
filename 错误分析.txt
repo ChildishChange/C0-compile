@@ -167,3 +167,40 @@ int
 出现了一个问题。。。
 expression在调用之前是否需要预读一个。。
 我觉得还是预读一个吧。。。
+
+
+getch一次缓冲一行
+getsym并没有预读
+constdec调用前都一个const ，最后需要预读一个才判断是否结束函数
+variadec调用前不预读，最后需要预读3个单词判断是否是有返回值函数，否则直接退出
+在函数体内调用则是预读了一个
+functwith调用前预读3个单词
+functwithout同调用前预读3个单词，还没写完
+paralist 0，最后读完了）才判断终止
+compoundstatement 在funct里读了一个大括号之后才调用这个，理论上没有预读
+statement_s
+statement//预读了一个。。。真是太好了。。
+scanfstatement
+printfstatement
+ifcondition
+expression//强制规定调用之前要预读一个,
+目前我是默认跳出不会预读。。但是肯定有问题。
+因为需要预读一位
+term默认term之前要预读
+默认跳出term不语都
+不，跳出term也预读了
+factor默认预读一个
+因为expression
+
+<项>=> <因子>{<乘法运算符><因子>}
+								
+<因子>=> 
+<标识符>|
+<标识符>'['<表达式>']'|
+//<有返回值函数调用语句>|//
+<标识符>'('<值参数表>')'
+<整数>|
+<实数>|
+<字符>|
+
+'('<表达式>')'  

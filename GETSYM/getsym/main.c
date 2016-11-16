@@ -687,6 +687,7 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
     }
 
 }
+
 //当读到左括号才调用这个函数
 int functwith(int kind,char name[])
 {
@@ -716,22 +717,27 @@ int functwith(int kind,char name[])
         sym = getsym();
         if(sym!=lbrace)
             printf("there should be a brace!");
-        compoundstatement();
+
+		compoundstatement();
 
         //读复合语句
         //读第二个大括号
+		sym = getsym();
+        if(sym!=rbrace)
+            printf("there should be a brace!");
 
-
-       sym = getsym();//读返回值
+       sym = getsym();//读下一个返回值
        kind = sym;
        memset(name,0,100);
-       sym = getsym();//读标识符
+       sym = getsym();//下一个标识符
        strcpy(name,token);//这是新的标识符
        getsym();//读左括号
 
     }
     if(kind == voidsym)
         functwithout(name);
+	else
+		;//报错
 
 }
 
@@ -792,8 +798,20 @@ int paralist()
     }while(sym!=rparent);//当读入其他符号是要报错的。。
 }
 
-
-int compoundstatement()
+int valuelist()
+{
+    int symtmp=0;
+    do
+    {
+        symtmp = sym;
+        expression();
+        symtmp = getsym();
+        if(symtmp==comma)
+            sym = getsym();
+    }
+    while(symtmp==comma);
+}
+int compoundstatement()//读了一个大括号才进来
 {
     sym = getsym();
     if(sym==constsym)
@@ -801,17 +819,57 @@ int compoundstatement()
         constdec();
     }
     variadec();
+
     statement_s();
 
 }
 int statement_s()
+{
+	do
+	{
+		statement();
+	}
+	while(sym != rbrace);
+}
 
+int whilestatement()
+{
+    sym = getsym();
+    if(sym==lparent)
+    {
+        condition();
+        sym = getsym();//右括号
+        sym = getsym();
+        statement();
+    }
+}
+
+int forstatement()
+{
+    sym = getsym();//
+    sym = getsym();//标识符
+    sym = getsym();//=
+    sym = getsym();
+    expression();
+    sym = getsym();//;
+    condition();
+    sym = getsym();//;
+    sym = getsym();//标识符
+    sym = getsym();//=
+    sym = getsym();//标识符
+    sym = getsym();//+-
+    sym = getsym();//integersym
+    sym = getsym();//rparent
+    sym = getsym();
+    statement();
+
+}
 int statement()//这个是语句
 {
     switch (sym)
     {
         case ifsym:
-            ifcondition();
+            ifcondition();//
             break;
         case whilesym:
             whilestatement();
@@ -822,9 +880,20 @@ int statement()//这个是语句
         case identsym://函数调用或者赋值语句，也可能是因子。。这就很尴尬了
             sym = getsym();
             if(sym == lbracket)//数组
+            {
+                sym = getsym();
+
+                expression();
+
+                break;
+            }
             else if(sym == lparent)//函数
             {
-
+                sym =getsym();
+                if(sym==rparent)
+                    break;
+                else
+                    valuelist();
             }
             else if(sym == becomes)//赋值
             {
@@ -845,7 +914,7 @@ int statement()//这个是语句
             break;
         case returnsym:
             sym = getsym();
-            if(sym==semicolon);
+            if(sym==semicolon)
                 ;
             else if(sym == lparent)
             {
@@ -933,11 +1002,11 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
         printf("there should be a left parenthese\n");
        // expression();
     }
-    expression();
+    condition();
     sym = getsym();
     if(sym!=rparent)
         ;
-    statement();
+    statement();//没有预读
     sym = getsym();
     if(sym == elsesym)
     {
@@ -945,37 +1014,158 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
     }
 }
 
+int condition()
+{
+	sym = getsym();
+	expression();
+	sym = getsym();
+	if(sym>=equal&&sym<=noequal)
+        printf("%s\n",_symbol[sym]);
+    sym = getsym();
+    expression();
+
+}
+
 int expression()
 {
-    sym = getsym();
-    if(sym==minus||sym==add)
-    {
-        term();
-    }
+    do{
+        if(sym==minus||sym==add)
+        {
+            sym = getsym();
+            term();
+        }
+        else
+        {
+            term();
+        }
+        //跳出term之后预读了
+      //  sym = getsym();
+    }while(sym==add||sym==minus);
+
 
 
 }
 
-int term()
+int term()//调用term前预读了一个
 {
-    factor();
+    do{
+        factor();
+        sym = getsym();//*/
+        getsym();//factor的预读
+    }while(sym==divi||sym==multi);//如果不是*/就相当于预读了两个
 }
 
 int factor()
 {
 
-    sym = getsym();
+    char tmp[100];
+    int i = 1;
     switch (sym)
     {
         case identsym://可能是变量或者数组或者函数调用
+
+            sym = getsym();
+            strcpy(tmp,token);
+            if(sym==lparent)//函数
+            {
+                sym = getsym();
+                if(sym==rparent)
+                    break;
+                else
+                {
+                    //值参数表
+                }
+            }
+            else if(sym == lbracket)//数组
+            {
+                sym = getsym();
+                expression();
+
+
+            }
+            else//变量啦
+            {
+                printf("%s",tmp);
+            }
             break;
-        case minus;//其实这里应该是数
+        case minus://其实这里应该是数
+            i*=-1;
+            sym = getsym();
+            if(sym==minus)//这是两个
+            {
+                i*=-1;
+                sym = getsym();
+                if(sym==integersym)
+                    printf(" and its value is : %d\n",integer*i);
+                else
+                    printf(" and its value is : %f\n",floatnum*i);
+                break;
+
+            }
+            else if(sym==add)
+            {
+                i*=1;
+                if(sym==integersym)
+                    printf(" and its value is : %d\n",integer*i);
+                else
+                    printf(" and its value is : %f\n",floatnum*i);
+                break;
+            }
+            else if(sym == real||sym==integersym)//这是一个个符号
+            {
+                if(sym==integersym)
+                    printf(" and its value is : %d\n",integer*i);
+                else
+                    printf(" and its value is : %f\n",floatnum*i);
+                break;
+            }
+            break;
         case add:
+            i*=1;
+            sym = getsym();
+            if(sym==minus)//这是两个
+            {
+                i*=-1;
+                sym = getsym();
+                if(sym==integersym)
+                    printf(" and its value is : %d\n",integer*i);
+                else
+                    printf(" and its value is : %f\n",floatnum*i);
+                break;
+
+            }
+            else if(sym==add)
+            {
+                i*=1;
+                if(sym==integersym)
+                    printf(" and its value is : %d\n",integer*i);
+                else
+                    printf(" and its value is : %f\n",floatnum*i);
+                break;
+            }
+            else if(sym == real||sym==integersym)//这是一个个符号
+            {
+                if(sym==integersym)
+                    printf(" and its value is : %d\n",integer*i);
+                else
+                    printf(" and its value is : %f\n",floatnum*i);
+                break;
+            }
+            break;
+        case real:
+            printf(" and its value is : %d\n",floatnum);
+            break;
+        case integersym:
+            printf(" and its value is : %f\n",integer);
             break;
         case cha://字符
+            printf("this is a char %c",ch);
             break;
         case lparent://括号表达式
+            sym = getsym();
             expression();
+            if(sym = rparent)
+                ;
             break;
         default :
             printf("fuck you!\n");//
