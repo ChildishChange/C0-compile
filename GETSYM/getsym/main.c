@@ -846,17 +846,52 @@ int statement_s()
         case forsym:
             forstatement();
             break;
-        case identsym://函数调用或者赋值语句
+        case identsym://函数调用或者赋值语句，也可能是因子。。这就很尴尬了
             break;
         case scanfsym:
+            scanfstatement();
+            sym = getsym();
+            if(sym==semicolon)
+                printf("scanf 处应为分号\n");
             break;
         case printfsym:
             break;
         case returnsym:
             break;
+        case semicolon:
+            break;
         default :
             printf("what the fuck is this?\n");
             break;
+    }
+}
+int scanfstatement()
+{
+    sym = getsym();//读左括号
+    if(sym==lparent)
+    {
+        do
+        {
+            sym = getsym();//读标识符
+            if(sym==identsym)
+            {
+                printf("%s",token);
+                sym = getsym();//读入一个逗号
+
+            }
+            else
+            {
+                printf("switch 里应该是标识符");
+            }
+
+        }
+        while(sym==comma);//读到右括号就读完了，跳出了
+        if(sym!=rparent)
+            printf("scanf此处应为右括号\n");//如果没写分号怎么办。。。
+    }
+    else
+    {
+        printf("scanf 的 左括号呢？\n");
     }
 }
 
