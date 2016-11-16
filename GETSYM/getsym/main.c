@@ -48,13 +48,13 @@ char getch();
 int getsym();
 int constdec();
 int variadec();
-
+int funct();
 /*
 //语法分析需要添加的函数
 int prog();
 
 
-int funct();
+
 int functiondec();
 int funtionret();
 int functionident();
@@ -81,6 +81,7 @@ int error();
 //
 int main()
 {
+    char *ptr;
 
     char file_addr[100];
     char buffer[100];
@@ -104,15 +105,13 @@ int main()
 
     printf("VALUE TYPE NO\n");
 
-    //while(!feof(IN))
-   // {
         sym = getsym();
         if(sym==constsym)
        {
-           constdec();variadec();
+           constdec();
        }
-   // }
 
+            variadec();
 
 
     return 0;
@@ -281,7 +280,7 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         sym = getsym();
                          if(sym == integersym)
                         {
-                            //填表
+                            //填表//type = array
                             printf(" and its size is %d\n",integer);
                             //】
                             sym = getsym();
@@ -297,14 +296,22 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                     }
                     else if(sym ==comma)
                     {
-                        //填表
+                        //填表//type = int
                         printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
 
                     }
                     else if(sym == semicolon)
                     {
+                        //type = int
                         printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
                         break;
+                    }
+                    else if(sym == lparent)
+                    {
+                        //type = functwithret
+                        printf("检测到有返回值的int函数\n");
+                     //   funct(intsym,);
+                        return;
                     }
                     else
                         ;//报错
@@ -350,6 +357,13 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                     {
                         printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
                         break;
+                    }
+                    else if(sym == lparent)
+                    {
+                        //type = functwithret
+                        printf("检测到有返回值的float函数\n");
+                   //     funct(intsym,);
+                        return;
                     }
                     else
                         ;//报错
@@ -397,6 +411,13 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
                             break;
                     }
+                    else if(sym == lparent)
+                    {
+                        //type = functwithret
+                        printf("检测到有返回值的char函数\n");
+                 //       funct(intsym,);
+                        return;
+                    }
                     else
                         ;//报错
 
@@ -409,6 +430,11 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 
 }
 
+int funct()
+{
+
+
+}
 char getch()
 {
 
