@@ -45,7 +45,9 @@ char getch();
 int getsym();
 int constdec();
 int variadec();
-int funct();
+int functwith();
+int functwithout();
+int paralist();
 /*
 //语法分析需要添加的函数
 int prog();
@@ -115,344 +117,6 @@ int main()
 }
 
 
-
-/*
-int prog()
-{
-    char *ptr;
-    sym = getsym(IN);
-    while(sym==constsym)
-    {
-        constdec();//常量定义最后一个字符是;，应此读到这个就可以结束一次常量说明了
-        sym = getsym(IN);
-    }
-    while(sym==intsym||sym==floatsym||sym==charsym)//可能是函数定义也可能是变量定义。。GG
-    {//解决方法是在这一行的缓冲里查找小括号？或者查找等于号
-        ptr = strchr(LineBuffer,'(');//这一行如果有（说明这个是有返回值函数定义
-        if(ptr){break;}
-        else{
-            variadec();//变量定义最后一个字符是；
-            sym = getsym(IN);
-        }
-        //暂时不添加错误处理
-    }
-    while(sym==intsym||sym==floatsym||sym==charsym||sym==voidsym)
-    {
-         funct();//最后一个字符是}
-         sym = getsym(IN);
-         //当读入main函数后，末尾还有非空字符，则报错
-    }
-    return 0;
-}
-
-*/
-
-int constdec()//处理符号
-{
-
-    int sign = 1;
-    while(sym==constsym)
-    {
-    //在调用这个函数之前已经get了一个sym，并因为sym是const所以才会进入这个函数
-        sym = getsym();
-        switch (sym)
-        {
-            case intsym://case里应该有一个循环
-				do{
-					sym = getsym();//获取标识符
-					printf("at %d:%d declare an const integer named : %s",Line,Column-strlen(token),token);
-					//查表，函数内有报错吧 ，大概
-					//进表
-					sym = getsym();
-					if(sym!=becomes)
-						;//报错
-					else
-					{
-						sym = getsym();
-						if(sym == integersym||sym == minus||sym==add)
-						{
-						    if(sym!=integersym)
-                            {
-                                if(sym==minus)
-                                    sign*=-1;
-                                sym = getsym();
-
-                            }
-							//填表
-							printf(" and its value is : %d\n",integer*sign);
-							sign = 1;
-							sym = getsym();
-							if(sym == comma){}
-							else if(sym == semicolon){break;}
-							else
-							{
-								//报错
-							}
-						}
-						else
-                            ;//报错
-					}
-				}while(sym==comma);
-				sym = getsym();
-                break;
-            case floatsym:
-                do{
-                    sym = getsym();
-                    printf("at %d:%d declare a const float named : %s",Line,Column-strlen(token),token);
-                    //查表，函数内有报错吧 ，大概
-                    //进表
-                    sym = getsym();
-                    if(sym!=becomes)
-                        ;//报错
-                    else
-                    {
-                        sym = getsym();
-                        if(sym==real||sym==minus||sym==add||sym==integersym)
-                        {
-                            while(sym!=real&&sym!=integersym)
-                            {
-                                if(sym==minus)
-                                    sign*=-1;
-                                sym = getsym();
-                            }
-                            //填表
-                            //此处要根据sym填表
-                            if(sym==integersym)
-                                printf(" and its value is : %d\n",integer*sign);
-                            else
-                                printf(" and its value is : %f\n",floatnum*sign);
-                            sign = 1;
-                            sym = getsym();
-                            if(sym == comma){}
-                            else if(sym == semicolon){break;}
-                            else
-                            {
-                                //报错
-                            }
-                        }
-                        else
-                            ;//报错
-                    }
-                }while(sym==comma);
-                sym = getsym();
-                break;
-            case charsym:
-                do{
-                    sym = getsym();//获取标识符
-                    printf("at %d:%d declare a const char named : %s",Line,Column-strlen(token),token);
-                    //查表，函数内有报错吧 ，大概
-                    //进表
-                    sym = getsym();
-                    if(sym!=becomes)
-                        ;//报错
-                    else
-                    {
-                        sym = getsym();
-                        if(sym!=cha)
-                            ;//报错
-                        else
-                        {
-                            //填表
-                            printf(" and its value is : %c\n",ch);
-                            sym = getsym();
-                            if(sym == comma){}
-                            else if(sym == semicolon){break;}
-                            else
-                            {
-                                //报错
-                            }
-                        }
-                    }
-
-                }while(sym==comma);
-                sym = getsym();
-                break;
-            default:
-                //报错
-                break;
-
-        }
-    }
-}
-
-int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不能是0
-{
-    char tmp[100];
-    int columntmp;
-    //当上一个sym是intfloatchar时，调用这个函数
-    while(sym==floatsym||sym==intsym||sym==charsym)
-    {
-        switch (sym)
-        {
-            case intsym:
-                do{
-					sym = getsym();//获取标识符
-                    //查表，函数内有报错吧 ，大概
-					//进表
-					strcpy(tmp,token);
-					columntmp = Column;//line大概也要一个
-					sym = getsym();
-                    if(sym==lbracket)
-                    {
-                        printf("at %d:%d declare an integer array named : %s",Line,columntmp-strlen(tmp),tmp);
-                        sym = getsym();
-                         if(sym == integersym)
-                        {
-                            //填表//type = array
-                            printf(" and its size is %d\n",integer);
-                            //】
-                            sym = getsym();
-                            if(sym==rbracket)
-                            {
-                                sym = getsym();
-                            }
-                            else
-                                ;//err
-                        }
-                        else
-                            ;//ERROR
-                    }
-                    else if(sym ==comma)
-                    {
-                        //填表//type = int
-                        printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
-
-                    }
-                    else if(sym == semicolon)
-                    {
-                        //type = int
-                        printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
-                        break;
-                    }
-                    else if(sym == lparent)
-                    {
-                        //type = functwithret
-                        printf("检测到有返回值的int函数\n");
-                     //   funct(intsym,);
-                        return;
-                    }
-                    else
-                        ;//报错
-
-                }while(sym == comma);
-
-                break;
-            case floatsym:
-                do{
-					sym = getsym();//获取标识符
-                    //查表，函数内有报错吧 ，大概
-					//进表
-					strcpy(tmp,token);
-					columntmp = Column;//line大概也要一个
-					sym = getsym();
-                    if(sym==lbracket)
-                    {
-                        printf("at %d:%d declare an float array named : %s",Line,columntmp-strlen(tmp),tmp);
-                        sym = getsym();
-                        if(sym == integersym)
-                        {
-                            //填表
-                            printf(" and its size is %d\n",integer);
-                            //】
-                            sym = getsym();
-                            if(sym==rbracket)
-                            {
-                                sym = getsym();
-                            }
-                            else
-                                ;//err
-                        }
-                        else
-                            ;//ERROR
-                    }
-                    else if(sym ==comma)
-                    {
-                        //填表
-                        printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
-
-                    }
-                    else if(sym == semicolon)
-                    {
-                        printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
-                        break;
-                    }
-                    else if(sym == lparent)
-                    {
-                        //type = functwithret
-                        printf("检测到有返回值的float函数\n");
-                   //     funct(intsym,);
-                        return;
-                    }
-                    else
-                        ;//报错
-
-                }while(sym == comma);
-                break;
-            case charsym:
-                do{
-					sym = getsym();//获取标识符
-                    //查表，函数内有报错吧 ，大概
-					//进表
-					//printf("alal\n");
-					strcpy(tmp,token);
-					columntmp = Column;//line大概也要一个
-					sym = getsym();
-					//printf("%s",token);
-                    if(sym==lbracket)
-                    {
-                        printf("at %d:%d declare an char array named : %s",Line,columntmp-strlen(tmp),tmp);
-                        sym = getsym();
-                        if(sym == integersym)
-                        {
-                            //填表
-                            printf(" and its size is %d\n",integer);
-                            //】
-                            sym = getsym();
-                            if(sym==rbracket)
-                            {
-                                sym = getsym();
-                            }
-                            else
-                                ;//err
-                        }
-                        else
-                            ;//ERROR
-                    }
-                    else if(sym ==comma)
-                    {
-                        //填表
-                        printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
-
-                    }
-                    else if(sym == semicolon)
-                    {
-                        printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
-                            break;
-                    }
-                    else if(sym == lparent)
-                    {
-                        //type = functwithret
-                        printf("检测到有返回值的char函数\n");
-                 //       funct(intsym,);
-                        return;
-                    }
-                    else
-                        ;//报错
-
-                }while(sym == comma);
-                break;
-
-        }
-         sym = getsym();
-    }
-
-}
-
-int funct()
-{
-
-
-}
 char getch()
 {
 
@@ -737,4 +401,373 @@ int getsym()
 
 
 
+}
+
+
+
+int constdec()//处理符号
+{
+
+    int sign = 1;
+    while(sym==constsym)
+    {
+    //在调用这个函数之前已经get了一个sym，并因为sym是const所以才会进入这个函数
+        sym = getsym();
+        switch (sym)
+        {
+            case intsym://case里应该有一个循环
+				do{
+					sym = getsym();//获取标识符
+					printf("at %d:%d declare an const integer named : %s",Line,Column-strlen(token),token);
+					//查表，函数内有报错吧 ，大概
+					//进表
+					sym = getsym();
+					if(sym!=becomes)
+						;//报错
+					else
+					{
+						sym = getsym();
+						if(sym == integersym||sym == minus||sym==add)
+						{
+						    if(sym!=integersym)
+                            {
+                                if(sym==minus)
+                                    sign*=-1;
+                                sym = getsym();
+
+                            }
+							//填表
+							printf(" and its value is : %d\n",integer*sign);
+							sign = 1;
+							sym = getsym();
+							if(sym == comma){}
+							else if(sym == semicolon){break;}
+							else
+							{
+								//报错
+							}
+						}
+						else
+                            ;//报错
+					}
+				}while(sym==comma);
+				sym = getsym();
+                break;
+            case floatsym:
+                do{
+                    sym = getsym();
+                    printf("at %d:%d declare a const float named : %s",Line,Column-strlen(token),token);
+                    //查表，函数内有报错吧 ，大概
+                    //进表
+                    sym = getsym();
+                    if(sym!=becomes)
+                        ;//报错
+                    else
+                    {
+                        sym = getsym();
+                        if(sym==real||sym==minus||sym==add||sym==integersym)
+                        {
+                            while(sym!=real&&sym!=integersym)
+                            {
+                                if(sym==minus)
+                                    sign*=-1;
+                                sym = getsym();
+                            }
+                            //填表
+                            //此处要根据sym填表
+                            if(sym==integersym)
+                                printf(" and its value is : %d\n",integer*sign);
+                            else
+                                printf(" and its value is : %f\n",floatnum*sign);
+                            sign = 1;
+                            sym = getsym();
+                            if(sym == comma){}
+                            else if(sym == semicolon){break;}
+                            else
+                            {
+                                //报错
+                            }
+                        }
+                        else
+                            ;//报错
+                    }
+                }while(sym==comma);
+                sym = getsym();
+                break;
+            case charsym:
+                do{
+                    sym = getsym();//获取标识符
+                    printf("at %d:%d declare a const char named : %s",Line,Column-strlen(token),token);
+                    //查表，函数内有报错吧 ，大概
+                    //进表
+                    sym = getsym();
+                    if(sym!=becomes)
+                        ;//报错
+                    else
+                    {
+                        sym = getsym();
+                        if(sym!=cha)
+                            ;//报错
+                        else
+                        {
+                            //填表
+                            printf(" and its value is : %c\n",ch);
+                            sym = getsym();
+                            if(sym == comma){}
+                            else if(sym == semicolon){break;}
+                            else
+                            {
+                                //报错
+                            }
+                        }
+                    }
+
+                }while(sym==comma);
+                sym = getsym();
+                break;
+            default:
+                //报错
+                break;
+
+        }
+    }
+}
+
+int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不能是0
+{
+    char tmp[100];
+    int columntmp;
+    //当上一个sym是intfloatchar时，调用这个函数
+    while(sym==floatsym||sym==intsym||sym==charsym)
+    {
+        switch (sym)
+        {
+            case intsym:
+                do{
+					sym = getsym();//获取标识符
+                    //查表，函数内有报错吧 ，大概
+					//进表
+					strcpy(tmp,token);
+					columntmp = Column;//line大概也要一个
+					sym = getsym();
+                    if(sym==lbracket)
+                    {
+                        printf("at %d:%d declare an integer array named : %s",Line,columntmp-strlen(tmp),tmp);
+                        sym = getsym();
+                         if(sym == integersym)
+                        {
+                            //填表//type = array
+                            printf(" and its size is %d\n",integer);
+                            //】
+                            sym = getsym();
+                            if(sym==rbracket)
+                            {
+                                sym = getsym();
+                            }
+                            else
+                                ;//err
+                        }
+                        else
+                            ;//ERROR
+                    }
+                    else if(sym ==comma)
+                    {
+                        //填表//type = int
+                        printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
+
+                    }
+                    else if(sym == semicolon)
+                    {
+                        //type = int
+                        printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
+                        break;
+                    }
+                    else if(sym == lparent)
+                    {
+                        //type = functwithret
+                        printf("detected a function:\n");
+                        functwith(intsym,tmp);
+                        return;
+                    }
+                    else
+                        ;//报错
+
+                }while(sym == comma);
+
+                break;
+            case floatsym:
+                do{
+					sym = getsym();//获取标识符
+                    //查表，函数内有报错吧 ，大概
+					//进表
+					strcpy(tmp,token);
+					columntmp = Column;//line大概也要一个
+					sym = getsym();
+                    if(sym==lbracket)
+                    {
+                        printf("at %d:%d declare an float array named : %s",Line,columntmp-strlen(tmp),tmp);
+                        sym = getsym();
+                        if(sym == integersym)
+                        {
+                            //填表
+                            printf(" and its size is %d\n",integer);
+                            //】
+                            sym = getsym();
+                            if(sym==rbracket)
+                            {
+                                sym = getsym();
+                            }
+                            else
+                                ;//err
+                        }
+                        else
+                            ;//ERROR
+                    }
+                    else if(sym ==comma)
+                    {
+                        //填表
+                        printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
+
+                    }
+                    else if(sym == semicolon)
+                    {
+                        printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
+                        break;
+                    }
+                    else if(sym == lparent)
+                    {
+                        //type = functwithret
+                                           printf("detected a function:\n");
+                        functwith(floatsym,tmp);
+                        return;
+                    }
+                    else
+                        ;//报错
+
+                }while(sym == comma);
+                break;
+            case charsym:
+                do{
+					sym = getsym();//获取标识符
+                    //查表，函数内有报错吧 ，大概
+					//进表
+					//printf("alal\n");
+					strcpy(tmp,token);
+					columntmp = Column;//line大概也要一个
+					sym = getsym();
+					//printf("%s",token);
+                    if(sym==lbracket)
+                    {
+                        printf("at %d:%d declare an char array named : %s",Line,columntmp-strlen(tmp),tmp);
+                        sym = getsym();
+                        if(sym == integersym)
+                        {
+                            //填表
+                            printf(" and its size is %d\n",integer);
+                            //】
+                            sym = getsym();
+                            if(sym==rbracket)
+                            {
+                                sym = getsym();
+                            }
+                            else
+                                ;//err
+                        }
+                        else
+                            ;//ERROR
+                    }
+                    else if(sym ==comma)
+                    {
+                        //填表
+                        printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
+
+                    }
+                    else if(sym == semicolon)
+                    {
+                        printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
+                            break;
+                    }
+                    else if(sym == lparent)
+                    {
+                        //type = functwithret
+                                    printf("detected a function:\n");
+                        functwith(charsym,tmp);
+                        return;
+                    }
+                    else
+                        ;//报错
+
+                }while(sym == comma);
+                break;
+
+        }
+         sym = getsym();
+    }
+
+}
+
+int functwith(int kind,char name[])
+{
+    while(kind>=1&&kind<=3)
+    {
+        switch (kind)
+        {
+            case intsym:
+                printf("funct named \"%s\" and return an integer\n",name);
+                //参数表
+                paralist();
+                break;
+            case floatsym:
+                printf("funct named \"%s\" and return a float\n",name);
+                paralist();
+                break;
+            case charsym:
+                printf("funct named \"%s\" and return a char\n",name);
+                paralist();
+                break;
+
+        }
+       sym = getsym();
+       kind = sym;
+       memset(name,0,100);
+       sym = getsym();
+       strcpy(name,token);
+       getsym();
+
+    }
+
+}
+
+int functwithout()
+{
+
+}
+
+int paralist()
+{
+
+    do{
+        sym = getsym();
+
+        if(sym==floatsym||sym==charsym||sym==intsym)
+        {
+            printf("it has a %s parameter",rWord[sym]);
+            sym = getsym();
+            //反正要做一些操作
+            if(sym!=identsym)
+                printf("can't use reserved word as identifier\n");//
+            else
+                printf(" and named %s\n",token);
+            sym = getsym();
+            if(sym!=comma&&sym!=rparent)
+            {
+                printf("there should be a comma or a right parent!\n");//报错
+            }
+
+        }
+        else if(sym==rparent)
+            printf("it does not have a parameter!\n");
+        else
+            printf("undefined type!\n");//报错
+    }while(sym!=rparent);//当读入其他符号是要报错的。。
 }
