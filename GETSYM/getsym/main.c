@@ -807,13 +807,23 @@ int valuelist()
     {
            // symtmp = sym;
         expression();
+/*        if(sym==comma)
+        {
+            sym = getsym();
+            expression();
+            continue;
+        }
         symtmp = getsym();
         sym = symtmp;
         if(symtmp==comma)
-            sym = getsym();
+            sym = getsym();*/
+            if(sym==rparent)
+            {
+                break;
+            }
 
     }
-    while(symtmp==comma);
+    while(sym==comma,sym = getsym());
     printf("out val list\n");
 }
 int compoundstatement()//读了一个大括号才进来
@@ -883,7 +893,6 @@ int statement()//这个是语句
     switch (sym)
     {
         case ifsym:
-            printf("this is a if \n");
             ifcondition();//
             break;
         case whilesym:
@@ -901,6 +910,14 @@ int statement()//这个是语句
                 sym = getsym();
 
                 expression();
+                sym = getsym();//
+                printf("%s\n",token);
+                if(sym==becomes)
+                {
+                    sym = getsym();
+                    expression();
+                    sym = getsym();
+                }
 
                 break;
             }
@@ -911,6 +928,7 @@ int statement()//这个是语句
                 {
                     printf("calling a function\n");
                     sym = getsym();
+
                     break;
                 }
 
@@ -923,7 +941,7 @@ int statement()//这个是语句
             else if(sym == becomes)//赋值
             {
                  sym = getsym();
-               expression();//这里没有预读
+               expression();
                sym = getsym();
             }
             else
@@ -952,7 +970,7 @@ int statement()//这个是语句
             {
                 sym = getsym();
 
-                expression();//这里没预读
+                expression();
                 sym = getsym();//;
             }
             else
@@ -1022,7 +1040,7 @@ int printfstatement()//理论上printf也能写完了
             {
                 sym = getsym();
                 printf("%s\n%s\n",token,_symbol[sym]);
-                expression();//这里预读
+                expression();//这里没有预读；
             }
             }
             else if(sym==rparent)
@@ -1034,7 +1052,7 @@ int printfstatement()//理论上printf也能写完了
                 ;//报错
         }
         else
-            expression();//这里的预读了
+            expression();//这里的预读了左括号
     }
     else//没有左括号
         ;//ERROR
@@ -1075,10 +1093,21 @@ int condition()
 	expression();
 //	sym = getsym();
 	if(sym>=equal&&sym<=noequal)
-        printf("this is a %s\n",_symbol[sym]);
+	{
+		printf("this is a %s\n",_symbol[sym]);
+	}
+	else if(sym==rparent)
+	{
+
+		printf("out condition\n");
+		return;
+
+	}
+
     sym = getsym();
  //   printf("%d\n",integer);
-    expression();
+
+    expression();//可能读到关系符号然后再跟一个表达式，也可能是
     printf("out condition\n");
 
 }
@@ -1089,6 +1118,7 @@ int expression()
     do{
         if(sym==minus||sym==add)
         {
+            //cichu yao zhuyi
             sym = getsym();
             term();
         }
@@ -1118,7 +1148,7 @@ int term()//调用term前预读了一个
       //  sym = getsym();//*/
      // getsym();//factor的预读
     }while(sym==divi||sym==multi);//如果不是*/就相当于预读了两个
-    printf("");
+
     printf("out term\n");
 }
 
@@ -1146,6 +1176,7 @@ int factor()
                 {
                     printf("calling a function\n");
                     valuelist();
+                    sym = getsym();
                     //值参数表
                 }
             }
@@ -1235,7 +1266,7 @@ int factor()
             break;
         case cha://字符
             printf("this is a char %c",ch);
-
+            sym = getsym();
             break;
         case lparent://括号表达式
             sym = getsym();
