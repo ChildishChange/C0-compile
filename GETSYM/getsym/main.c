@@ -927,7 +927,8 @@ int statement()//这个是语句
                 if(sym==rparent)
                 {
                     printf("calling a function\n");
-                    sym = getsym();
+                    sym = getsym();//;
+                    sym = getsym();//下一个
 
                     break;
                 }
@@ -1183,7 +1184,7 @@ int factor()
             else if(sym == lbracket)//数组
             {
                 sym = getsym();
-                expression();
+                expression();//跳出之前已经读了]
             //    sym = getsym();
 
             }
