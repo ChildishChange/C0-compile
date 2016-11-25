@@ -1,3 +1,4 @@
+//TODO 一个贼牛逼的bug
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +45,13 @@ char ch;//如果是单个字符
 int sym;//用于保存每次getsym的返回值
 
 /*==============符号表================*/
+
+int _obj;
+int _typ;
+char _name[100];
+double _value;
+
+
 struct STab//全局符号表
 {
 	int obj;//1const,2varia,3function
@@ -54,6 +62,7 @@ struct STab//全局符号表
 	int ref;//如果是函数或数组，这个就是在相应的表里的位置
 	int normal;//暂时先留着
 	int adr;//如果是全局常量，如果是全局变量，如果是局部常量，如果是局部变量
+	double value;
 	//全局变量，存在运行栈里
 	//局部变量，只有当使用时才分配值，指向在运行栈中的位置
 	//全局常量，存在符号表里
@@ -85,8 +94,8 @@ struct StrTab
 	char j[200];
 }StrTable[500];
 int StrTabAddr = 0;
-
-int addSTab();
+int searchinSTab(int type,char target[]);
+int addSTab(int obj,int typ,char name[],double value);
 int addfunctTab();
 int addarrayTab();
 int addStrTab();
@@ -115,7 +124,7 @@ int printfstatement();
 int main()
 {
     char *ptr;
-
+	int i ;
     char file_addr[100];
     char buffer[100];
 
@@ -152,6 +161,23 @@ int main()
         functwithout(buffer);
 
     }
+	printf("no\tname\tobj\ttyp\tlink\tref\tvalue\n");
+	for(i = 0;i<globalTabAddr;i++)
+	{
+		printf("%d\t",i);
+		printf("%s\t",globalTab[i].name);
+		printf("%d\t",globalTab[i].obj);
+		printf("%d\t",globalTab[i].typ);
+		printf("%d\t",globalTab[i].link);
+		printf("%d\t",globalTab[i].ref);
+		if(globalTab[i].typ==1)
+			printf("%d\n",(int)globalTab[i].value);
+		else if(globalTab[i].typ==2)
+			printf("%.2f\n",globalTab[i].value);
+		else
+			printf("%c\n",(char)globalTab[i].value);
+
+	}
     return 0;
 }
 
@@ -164,7 +190,10 @@ char getch()
         {
 
             memset(LineBuffer,0,200);//清空
-            fgets(LineBuffer,200,IN);//再读一行
+			if(feof(IN))
+				return;
+			fgets(LineBuffer,200,IN);//再读一行
+
             Line++;
             if(LineBuffer[0]=='\n')
                 continue;
@@ -172,10 +201,12 @@ char getch()
                 break;
         }
         LineBuffer[strlen(LineBuffer)]='\0';
+	//	puts(LineBuffer);
         linelength = strlen(LineBuffer);
         curindex = 0;
     }
     Column = curindex;
+
     return LineBuffer[curindex++];
 
 }
@@ -443,20 +474,22 @@ int getsym()
 
 int constdec()//处理符号
 {
-
-    int sign = 1;
+	int sign = 1;
     while(sym==constsym)
     {
+		//
+		_obj = 1;
     //在调用这个函数之前已经get了一个sym，并因为sym是const所以才会进入这个函数
         sym = getsym();
         switch (sym)
         {
             case intsym: //case里应该有一个循环
 				do{
+					_typ = 1;
 					sym = getsym();//获取标识符
 					printf("at %d:%d declare an const integer named : %s",Line,Column-strlen(token),token);
-					//查表，函数内有报错吧 ，大概
-					//进表
+					strcpy(_name,token);
+
 					sym = getsym();
 					if(sym!=becomes)
 						;//报错
@@ -474,6 +507,15 @@ int constdec()//处理符号
                             }
 							//填表
 							printf(" and its value is : %d\n",integer*sign);
+							_value = integer*sign;
+							if(searchinSTab(1,_name)==-1)
+							{
+								addSTab(_obj,_typ,_name,_value);
+							}
+							else
+							{
+								printf("**** multi defined in int const ****\n");
+							}
 							sign = 1;
 							sym = getsym();
 							if(sym == comma){}
@@ -491,11 +533,11 @@ int constdec()//处理符号
                 break;
             case floatsym:
                 do{
+					_typ = 2;
                     sym = getsym();
                     printf("at %d:%d declare a const float named : %s",Line,Column-strlen(token),token);
-                    //查表，函数内有报错吧 ，大概
-                    //进表
-                    sym = getsym();
+                    strcpy(_name,token);
+					sym = getsym();
                     if(sym!=becomes)
                         ;//报错
                     else
@@ -512,10 +554,24 @@ int constdec()//处理符号
                             //填表
                             //此处要根据sym填表
                             if(sym==integersym)
-                                printf(" and its value is : %d\n",integer*sign);
-                            else
+                            {
+								printf(" and its value is : %d\n",integer*sign);
+								_value = integer*sign;
+                            }
+							else
+							{
                                 printf(" and its value is : %f\n",floatnum*sign);
-                            sign = 1;
+								_value = floatnum*sign;
+							}
+							if(searchinSTab(1,_name)==-1)
+							{
+								addSTab(_obj,_typ,_name,_value);
+							}
+							else
+							{
+								printf("**** multi defined in float const ****\n");
+							}
+							sign = 1;
                             sym = getsym();
                             if(sym == comma){}
                             else if(sym == semicolon){break;}
@@ -532,10 +588,11 @@ int constdec()//处理符号
                 break;
             case charsym:
                 do{
+					_typ = 3;
                     sym = getsym();//获取标识符
                     printf("at %d:%d declare a const char named : %s",Line,Column-strlen(token),token);
-                    //查表，函数内有报错吧 ，大概
-                    //进表
+                    strcpy(_name,token);
+					//进表
                     sym = getsym();
                     if(sym!=becomes)
                         ;//报错
@@ -548,7 +605,16 @@ int constdec()//处理符号
                         {
                             //填表
                             printf(" and its value is : %c\n",ch);
-                            sym = getsym();
+                            _value = ch;
+							if(searchinSTab(1,_name)==-1)
+							{
+								addSTab(_obj,_typ,_name,_value);
+							}
+							else
+							{
+								printf("**** multi defined in char const ****\n");
+							}
+							sym = getsym();
                             if(sym == comma){}
                             else if(sym == semicolon){break;}
                             else
@@ -572,6 +638,7 @@ int constdec()//处理符号
 int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不能是0
 {
     char tmp[100];
+	_obj = 2;
     int columntmp;
     //当上一个sym是intfloatchar时，调用这个函数
     while(sym==floatsym||sym==intsym||sym==charsym)
@@ -579,21 +646,37 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
         switch (sym)
         {
             case intsym:
+				_typ = 1;
                 do{
 					sym = getsym();//获取标识符
                     //查表，函数内有报错吧 ，大概
 					//进表
 					strcpy(tmp,token);
+					strcpy(_name,token);
 					columntmp = Column;//line大概也要一个
 					sym = getsym();
-                    if(sym==lbracket)
+                    if(sym==lbracket)//数组
                     {
                         printf("at %d:%d declare an integer array named : %s",Line,columntmp-strlen(tmp),tmp);
                         sym = getsym();
                          if(sym == integersym)
                         {
                             //填表//type = array
+							_typ = 5;
                             printf(" and its size is %d\n",integer);
+							arrayT[arrayTAddr].elementType = 1;
+							arrayT[arrayTAddr].size = integer;
+							if(searchinSTab(1,_name)==-1)
+							{
+								addSTab(_obj,_typ,_name,-1);
+								arrayTAddr++;
+								globalTabAddr+=integer-1;
+							}
+							else
+							{
+								printf("**** multi defined in varia ****\n");
+							}
+
                             //】
                             sym = getsym();
                             if(sym==rbracket)
@@ -606,17 +689,32 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         else
                             ;//ERROR
                     }
-                    else if(sym ==comma)
+                    else if(sym ==comma)//变量
                     {
                         //填表//type = int
                         printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
-
+						if(searchinSTab(1,_name)==-1)
+						{
+							addSTab(_obj,_typ,_name,-1);
+						}
+						else
+						{
+							printf("**** multi defined in varia ****\n");
+						}
                     }
-                    else if(sym == semicolon)
+                    else if(sym == semicolon)//变量
                     {
                         //type = int
                         printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
-                        break;
+                        if(searchinSTab(1,_name)==-1)
+						{
+							addSTab(_obj,_typ,_name,-1);
+						}
+						else
+						{
+							printf("**** multi defined in varia ****\n");
+						}
+						break;
                     }
                     else if(sym == lparent)//pre read a sym
                     {
@@ -632,11 +730,13 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 
                 break;
             case floatsym:
-                do{
+                _typ = 2;
+				do{
 					sym = getsym();//获取标识符
                     //查表，函数内有报错吧 ，大概
 					//进表
 					strcpy(tmp,token);
+					strcpy(_name,token);
 					columntmp = Column;//line大概也要一个
 					sym = getsym();
                     if(sym==lbracket)
@@ -646,7 +746,21 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         if(sym == integersym)
                         {
                             //填表
+                            _typ = 5;
                             printf(" and its size is %d\n",integer);
+							arrayT[arrayTAddr].elementType = 2;
+							arrayT[arrayTAddr].size = integer;
+
+							if(searchinSTab(1,_name)==-1)
+							{
+								addSTab(_obj,_typ,_name,-1);
+								arrayTAddr++;
+								globalTabAddr+=integer-1;
+							}
+							else
+							{
+								printf("**** multi defined in varia ****\n");
+							}
                             //】
                             sym = getsym();
                             if(sym==rbracket)
@@ -663,17 +777,32 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                     {
                         //填表
                         printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
-
+						if(searchinSTab(1,_name)==-1)
+						{
+							addSTab(_obj,_typ,_name,-1);
+						}
+						else
+						{
+							printf("**** multi defined in varia ****\n");
+						}
                     }
                     else if(sym == semicolon)
                     {
                         printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
-                        break;
+                        if(searchinSTab(1,_name)==-1)
+						{
+							addSTab(_obj,_typ,_name,-1);
+						}
+						else
+						{
+							printf("**** multi defined in varia ****\n");
+						}
+						break;
                     }
                     else if(sym == lparent)
                     {
                         //type = functwithret
-                                           printf("detected a function  with return :\n");
+                        printf("detected a function  with return :\n");
                         functwith(floatsym,tmp);
                         return;
                     }
@@ -683,12 +812,14 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                 }while(sym == comma);
                 break;
             case charsym:
-                do{
+				_typ = 3;
+				do{
 					sym = getsym();//获取标识符
                     //查表，函数内有报错吧 ，大概
 					//进表
 					//printf("alal\n");
 					strcpy(tmp,token);
+					strcpy(_name,token);
 					columntmp = Column;//line大概也要一个
 					sym = getsym();
 					//printf("%s",token);
@@ -699,7 +830,21 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         if(sym == integersym)
                         {
                             //填表
+                            _typ = 5;
                             printf(" and its size is %d\n",integer);
+							arrayT[arrayTAddr].elementType = 3;
+							arrayT[arrayTAddr].size = integer;
+
+							if(searchinSTab(1,_name)==-1)
+							{
+								addSTab(_obj,_typ,_name,-1);
+								arrayTAddr++;
+								globalTabAddr+=integer-1;
+							}
+							else
+							{
+								printf("**** multi defined in varia ****\n");
+							}
                             //】
                             sym = getsym();
                             if(sym==rbracket)
@@ -716,12 +861,27 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                     {
                         //填表
                         printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
-
+						if(searchinSTab(1,_name)==-1)
+						{
+							addSTab(_obj,_typ,_name,-1);
+						}
+						else
+						{
+							printf("**** multi defined in varia ****\n");
+						}
                     }
                     else if(sym == semicolon)
                     {
                         printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
-                            break;
+						if(searchinSTab(1,_name)==-1)
+						{
+							addSTab(_obj,_typ,_name,-1);
+						}
+						else
+						{
+							printf("**** multi defined in varia ****\n");
+						}
+						break;
                     }
                     else if(sym == lparent)
                     {
@@ -737,6 +897,7 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                 break;
 
         }
+
          sym = getsym();
     }
 
@@ -752,18 +913,28 @@ int functwith(int kind,char name[])//已经预读左括号
             case intsym:
                 printf("funct named \"%s\" and return an integer\n",name);
                 //参数表
+				_typ = 1;
                 break;
             case floatsym:
                 printf("funct named \"%s\" and return a float\n",name);
-
+                _typ = 2;
                 break;
             case charsym:
                 printf("funct named \"%s\" and return a char\n",name);
-
+                _typ = 3;
                 break;
 
         }
-
+		_obj = 3;
+		strcpy(_name,name);
+		if(searchinSTab(2,_name)==-1)
+		{
+			addSTab(_obj,_typ,_name,-1);
+		}
+		else
+		{
+			printf("**** multi defined in funct ****\n");
+		}
 		paralist();//参数表
         //这里是处理复合语句的
 
@@ -780,6 +951,9 @@ int functwith(int kind,char name[])//已经预读左括号
        memset(name,0,100);
        sym = getsym();//下一个标识符
        strcpy(name,token);//这是新的标识符
+       strcpy(_name,token);
+
+
        getsym();//读左括号
 
     }
@@ -798,17 +972,32 @@ int functwithout(char name[])
         //
         printf("function named \"%s\" without return\n",name);
 
+		_obj = 3;
+		_typ = 4;
+		strcpy(_name,name);
+		if(searchinSTab(2,_name)==-1)
+		{
+			addSTab(_obj,_typ,_name,-1);
+		}
+		else
+		{
+			printf("**** multi defined in funct ****\n");
+		}
 
         paralist();
         sym = getsym();
         if(sym!=lbrace)
-            printf("there should be a brace!");
+		{   printf("there should be a brace!");
+			return ;
+		}
 		compoundstatement();
+
 
 
         sym = getsym();//读void
    //     printf("sym:%d\n",sym);
         getsym();//读标识符
+		strcpy(_name,token);
   //      memset(name,0,100);
         strcpy(name,token);
     //    if(getsym()!=lparent)//读括号
@@ -832,14 +1021,27 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
 
         if(sym==floatsym||sym==charsym||sym==intsym)
         {
+			_obj = 2;
+			_typ = sym;
             printf("it has a %s parameter",rWord[sym]);
             sym = getsym();
             //反正要做一些操作
             if(sym!=identsym)
                 printf("can't use reserved word as identifier\n");//
             else
-                printf(" and named %s\n",token);
+            {
+				printf(" and named %s\n",token);
+				strcpy(_name,token);
+			}
             sym = getsym();
+			if(searchinSTab(1,_name)==-1)
+			{
+				addSTab(_obj,_typ,_name,-1);
+			}
+			else
+			{
+				printf("**** already defined ****\n");
+			}
             if(sym!=comma&&sym!=rparent)
             {
                 printf("there should be a comma or a right parent!\n");//报错
@@ -1417,7 +1619,7 @@ int factor()
 
 
 /*=======================================*/
-int addSTab()//这个要再讨论一下
+int addSTab(int obj,int typ,char name[],double value)//这个要再讨论一下
 {
 	/*
 	1.全局常量定义时，STab里的值都有一个预存的全局变量
@@ -1434,14 +1636,12 @@ int addSTab()//这个要再讨论一下
 	如果读入了一个函数，这函数没有被定义//报错就好
 	*/
 	globalTab[globalTabAddr].obj = obj;
-
 	globalTab[globalTabAddr].typ = typ;
-
-	strcpy(globalTab[globalTabAddr].name,name);
-
+	globalTab[globalTabAddr].normal = 0;
+	strncpy(globalTab[globalTabAddr].name,name,20);
 	if(obj == 3)
 	{
-		globalTab[globalTabAddr].link = -1;
+		globalTab[globalTabAddr].link = functT[functTAddr].begin;
 	}
 	else
 	{
@@ -1451,20 +1651,24 @@ int addSTab()//这个要再讨论一下
 	if(typ==5)
 	{
 		globalTab[globalTabAddr].ref = arrayTAddr;
+		//对数组表的操作放在了外面
 	}
 	else if(obj==3)
 	{
+		functTAddr++;
 		globalTab[globalTabAddr].ref = functTAddr;
-		addfunctTab();
+		functT[functTAddr].begin = globalTabAddr;
+
 	}
 	else
 	{
 		globalTab[globalTabAddr].ref = -1;
 	}
+	globalTab[globalTabAddr].value = value;
 
 	globalTabAddr++;
 
-}
+}/*
 int addfunctTab()
 {
 	functT[functTAddr].begin = globalTabAddr;
@@ -1477,18 +1681,75 @@ int addarrayTab()
 int addStrTab()
 {
 
-}
-int searchinSTab(char target[])//在当前定义的函数范围内查表
+}*/
+
+int searchinSTab(int type,char target[])//在当前定义的函数范围内查表
 {
 	int index = -1;
 	int i = 0;
-	for(i = 0;i<globalTabAddr-1;i++)//i的初值有待商榷
+	switch (type)
 	{
-		if(strcmp(globalTab[i].name,target))
-		{
-			index = i;
+		case 1://量定义
+			if(functTAddr==0)
+			{
+				for(i = 0;i<globalTabAddr;i++)
+				{
+					if(strncmp(globalTab[i].name,target,20)==0)
+					{
+						index = i;
+						break;
+					}
+				}
+			}
+			else
+			{
+				for(i = functT[functTAddr].begin+1;i<globalTabAddr-1;i++)
+				{
+					if(strncmp(globalTab[i].name,target,20)==0)
+					{
+						index = i;
+						break;
+					}
+				}
+			}
 			break;
-		}
+		case 2://函数定义
+			if(functTAddr==0)
+			{
+				for(i = 0;i<globalTabAddr-1;i++)
+				{
+					if(strncmp(globalTab[i].name,target,20)==0)
+					{
+						index = i;
+						break;
+					}
+				}
+			}
+			else
+			{
+				for(i = 0;i<=functT[0].end;i++)
+				{
+					if(strncmp(globalTab[i].name,target,20)==0)
+					{
+						index = i;
+						break;
+					}
+				}
+				for(i = 1;i<functTAddr;i++)
+				{
+					if(strncmp(globalTab[functT[i].begin].name,target,20)==0)
+					{
+						index = i;
+						break;
+					}
+				}
+			}
+			break;
+		case 3://调用量，
+
+			break;
+		case 4:
+			break;
 	}
 	return index;
 }
