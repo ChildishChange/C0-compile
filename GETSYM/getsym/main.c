@@ -18,6 +18,8 @@ int linelength = 1;
 int curindex = 0;
 
 
+
+
 const char *rWord[] = {"const","int","float","char","void","return","for","while","if","else","printf" ,"scanf"};
 
 const enum symbol    {constsym = 0,intsym,floatsym,charsym,voidsym,returnsym,forsym,whilesym,ifsym,elsesym,printfsym,scanfsym,
@@ -41,6 +43,54 @@ char ch;//如果是单个字符
 
 int sym;//用于保存每次getsym的返回值
 
+/*==============符号表================*/
+struct STab//全局符号表
+{
+	int obj;//1const,2varia,3function
+	int typ;//1int2real3char4void5array
+	//1int2
+	char name[20];
+	int link;//在同一函数中上一个标识符在符号表中的位置，一般都是t-1
+	int ref;//如果是函数或数组，这个就是在相应的表里的位置
+	int normal;//暂时先留着
+	int adr;//如果是全局常量，如果是全局变量，如果是局部常量，如果是局部变量
+	//全局变量，存在运行栈里
+	//局部变量，只有当使用时才分配值，指向在运行栈中的位置
+	//全局常量，存在符号表里
+	//局部常量，存在符号表里
+	//当运行时查表，如果在当前函数的区域里已经查到了这个值，就不往外
+	//如果没查到，就往全局查
+	//因为没有指针，所以函数参数实际上是这个函数的变量
+	//在调用函数传值时，实际上就是给这些参数代表的变量传值
+
+}globalTab[3000];
+int globalTabAddr = 0;
+
+struct functTab//函数表，只用来存函数内部的变量在符号表里的范围
+{
+	int begin;
+	int end;
+}functT[300];
+int functTAddr = 0;
+
+struct arrayTab//数组表
+{
+	int elementType;
+	int size;
+}arrayT[300];
+int arrayTAddr = 0;
+
+struct StrTab
+{
+	char j[200];
+}StrTable[500];
+int StrTabAddr = 0;
+
+int addSTab();
+int addfunctTab();
+int addarrayTab();
+int addStrTab();
+/*==============符号表================*/
 char getch();
 int getsym();
 int constdec();
@@ -1152,9 +1202,6 @@ int printfstatement()//理论上printf也能写完了
 }
 
 
-
-
-
 int expression()
 {
     printf("enter expression\n");
@@ -1193,7 +1240,6 @@ int term()//调用term前预读了一个
 
     printf("out term\n");
 }
-
 
 int factor()
 {
@@ -1366,3 +1412,84 @@ int factor()
     printf("out factor\n");
 
 }
+
+
+
+
+/*=======================================*/
+int addSTab()//这个要再讨论一下
+{
+	/*
+	1.全局常量定义时，STab里的值都有一个预存的全局变量
+	  读入const时，设obj
+	  读入类型符号时，设typ
+	  读入name时，设name
+	  读入等号，balabal
+	  读入逗号，前两个值不变
+	2.局部变量，只有当第一次使用时才分配值，指向在运行栈中的位置、
+	3.全局变量，设adr
+	4.局部常量，存在符号表里
+	*/
+	/*
+	如果读入了一个函数，这函数没有被定义//报错就好
+	*/
+	globalTab[globalTabAddr].obj = obj;
+
+	globalTab[globalTabAddr].typ = typ;
+
+	strcpy(globalTab[globalTabAddr].name,name);
+
+	if(obj == 3)
+	{
+		globalTab[globalTabAddr].link = -1;
+	}
+	else
+	{
+		globalTab[globalTabAddr].link = globalTabAddr-1;
+	}
+
+	if(typ==5)
+	{
+		globalTab[globalTabAddr].ref = arrayTAddr;
+	}
+	else if(obj==3)
+	{
+		globalTab[globalTabAddr].ref = functTAddr;
+		addfunctTab();
+	}
+	else
+	{
+		globalTab[globalTabAddr].ref = -1;
+	}
+
+	globalTabAddr++;
+
+}
+int addfunctTab()
+{
+	functT[functTAddr].begin = globalTabAddr;
+}
+int addarrayTab()
+{
+	arrayT[arrayTAddr].elementType = typ;
+}
+
+int addStrTab()
+{
+
+}
+int searchinSTab(char target[])//在当前定义的函数范围内查表
+{
+	int index = -1;
+	int i = 0;
+	for(i = 0;i<globalTabAddr-1;i++)//i的初值有待商榷
+	{
+		if(strcmp(globalTab[i].name,target))
+		{
+			index = i;
+			break;
+		}
+	}
+	return index;
+}
+/*=======================================*/
