@@ -6,7 +6,7 @@
 
 #define line_leng 100
 #define RNUM 12
-
+#define CODEMAX 10000
 
 
 //TODO 添加错误处理
@@ -100,6 +100,24 @@ int addfunctTab();
 int addarrayTab();
 int addStrTab();
 /*==============符号表================*/
+/*==============中间代码==============*/
+
+int genPcode(int f,int op1,double op2);
+
+struct Pcode
+{
+	int funct;
+	int opr1;
+	double opr2;
+}CodeList[CODEMAX];
+int C_INDEX = 0;
+const enum fct  {LOD = 1,LIT,STO,JMP,JPC,OPR,CAL,INT,RED,WRT};
+/*==============中间代码==============*/
+/*==============运行栈================*/
+double S[3000];
+int T = 0;
+/*==============运行栈================*/
+/*====================================*/
 char getch();
 int getsym();
 int constdec();
@@ -146,13 +164,14 @@ int main()
     }
 
     printf("VALUE TYPE NO\n");
-
+	genPcode(INT,0,3);
     sym = getsym();
     if(sym==constsym)
     {
         constdec();
     }
     variadec();
+
     if(sym == voidsym)
     {
         getsym();
@@ -182,6 +201,11 @@ int main()
     {
         printf("begin:%d,end:%d\n",functT[i].begin,functT[i].end);
     }
+
+	for(i =0;i<C_INDEX;i++)
+	{
+		printf("%d\t%d\t%f\n",CodeList[i].funct,CodeList[i].opr1,CodeList[i].opr2);
+	}
 	return 0;
 }
 
@@ -673,6 +697,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 							if(searchinSTab(1,_name)==-1)
 							{
 								addSTab(_obj,_typ,_name,-1);
+								globalTab[globalTabAddr-1].ref = T;
+								T+=integer;//压栈
 								arrayTAddr++;
 								globalTabAddr+=integer-1;
 							}
@@ -700,6 +726,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 						if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
+							globalTab[globalTabAddr-1].ref = T;
+							T++;//压栈
 						}
 						else
 						{
@@ -713,6 +741,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
+							globalTab[globalTabAddr-1].ref = T;
+							T++;//压栈
 						}
 						else
 						{
@@ -758,6 +788,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 							if(searchinSTab(1,_name)==-1)
 							{
 								addSTab(_obj,_typ,_name,-1);
+								globalTab[globalTabAddr-1].ref = T;
+								T+=integer;//压栈
 								arrayTAddr++;
 								globalTabAddr+=integer-1;
 							}
@@ -783,7 +815,10 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         printf("at %d:%d declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
 						if(searchinSTab(1,_name)==-1)
 						{
+
 							addSTab(_obj,_typ,_name,-1);
+							globalTab[globalTabAddr-1].ref = T;
+							T++;//压栈
 						}
 						else
 						{
@@ -796,6 +831,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
                         if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
+							globalTab[globalTabAddr-1].ref = T;
+							T++;//压栈
 						}
 						else
 						{
@@ -842,6 +879,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 							if(searchinSTab(1,_name)==-1)
 							{
 								addSTab(_obj,_typ,_name,-1);
+								globalTab[globalTabAddr-1].ref = T;
+								T+=integer;//压栈
 								arrayTAddr++;
 								globalTabAddr+=integer-1;
 							}
@@ -868,6 +907,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 						if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
+							globalTab[globalTabAddr-1].ref = T;
+							T++;//压栈
 						}
 						else
 						{
@@ -880,6 +921,8 @@ int variadec()//变量声明时并不赋值，以及可以有数组，数组里一定要有无符号整数，不
 						if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
+							globalTab[globalTabAddr-1].ref = T;
+							T++;//压栈
 						}
 						else
 						{
@@ -933,7 +976,10 @@ int functwith(int kind,char name[])//已经预读左括号
 		strcpy(_name,name);
 		if(searchinSTab(2,_name)==-1)
 		{
+			genPcode(INT,0,3);
+			genPcode(CAL,0,C_INDEX);
 			addSTab(_obj,_typ,_name,-1);
+			T++;
 		}
 		else
 		{
@@ -981,7 +1027,11 @@ int functwithout(char name[])
 		strcpy(_name,name);
 		if(searchinSTab(2,_name)==-1)
 		{
+		//	T+=3;
+			genPcode(INT,0,3);
+			genPcode(CAL,0,C_INDEX);
 			addSTab(_obj,_typ,_name,-1);
+			T++;
 		}
 		else
 		{
@@ -1040,7 +1090,10 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
             sym = getsym();
 			if(searchinSTab(1,_name)==-1)
 			{
+
 				addSTab(_obj,_typ,_name,-1);
+				globalTab[globalTabAddr-1].ref = T;
+				T++;//压栈
 			}
 			else
 			{
@@ -1192,6 +1245,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
                 {
                     sym = getsym();
                     expression();
+					genPcode(STO,0,0);
                     sym = getsym();
                 }
 
@@ -1410,8 +1464,9 @@ int printfstatement()//理论上printf也能写完了
 
 int expression()
 {
+	int op ;
     printf("enter expression\n");
-    do{
+/* 	do{
         if(sym==minus||sym==add)
         {
             //cichu yao zhuyi
@@ -1423,17 +1478,38 @@ int expression()
 
             term();
         }
+	}while(sym==add||sym==minus);*/
 
-    }while(sym==add||sym==minus);
-    printf("out expression\n");
-
-
+   if(sym==minus||sym==add)
+    {//cichu yao zhuyi
+		op = sym;
+        sym = getsym();
+        term();
+		if(op==minus)
+			genPcode(OPR,0,1);//取反
+    }
+    else
+    {
+		term();
+    }
+	while(sym==add||sym==minus)
+	{
+		op = sym;
+		sym = getsym();
+		term();
+		if(op==minus)
+			genPcode(OPR,0,2);//+
+		else
+			genPcode(OPR,0,3);//-
+	}
+	printf("out expression\n");
 }
 
 int term()//调用term前预读了一个
 {
+	int op ;
     printf("enter term\n");
-    do{
+  /*  do{
         if(sym==divi||sym==multi)
         {
             sym = getsym();
@@ -1442,8 +1518,19 @@ int term()//调用term前预读了一个
         else
             factor();
 
-    }while(sym==divi||sym==multi);//如果不是*/就相当于预读了两个
+    }while(sym==divi||sym==multi);*/
 
+    factor();
+	while(sym==divi||sym==multi)
+	{
+		op=sym;
+		sym = getsym();
+		factor();
+		if(op==multi)
+			genPcode(OPR,0,4);//*
+		else
+			genPcode(OPR,0,5);//-/
+	}
     printf("out term\n");
 }
 
@@ -1456,14 +1543,17 @@ int factor()
     {
 		case real:
             printf("this factor is a real : %f\n",floatnum);
-            sym = getsym();
+            genPcode(LIT,0,floatnum);
+			sym = getsym();
             break;
         case integersym:
             printf("this factor is an integer : %d\n",integer);
-            sym = getsym();
+            genPcode(LIT,0,integer);
+			sym = getsym();
             break;
         case cha://字符
             printf("this factor is a char %c",ch);
+			genPcode(LIT,0,ch);
             sym = getsym();
             break;
         case minus://这是有符号数的第一个符号，实数可能有两个，整数只有一个
@@ -1474,10 +1564,15 @@ int factor()
                 i*=-1;
                 sym = getsym();
                 if(sym==integersym)
-                    printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
-                else if(sym==real)
-                    printf("this factor is a real : %f\n",floatnum*i);
-                else
+				{
+					printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
+                }
+				else if(sym==real)
+				{
+					printf("this factor is a real : %f\n",floatnum*i);
+					genPcode(LIT,0,floatnum*i);
+                }
+				else
 					printf("**** error in factor! ****\n");
 
 				sym = getsym();
@@ -1489,10 +1584,15 @@ int factor()
                 i*=1;
                 sym = getsym();
                 if(sym==integersym)
-                    printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
-                else if(sym==real)
-                    printf("this factor is a real : %f\n",floatnum*i);
-                else
+                {
+					printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
+                }
+				else if(sym==real)
+                {
+					printf("this factor is a real : %f\n",floatnum*i);
+					genPcode(LIT,0,floatnum*i);
+				}
+				else
 					printf("**** error in factor! ****\n");
 
 				sym = getsym();
@@ -1501,10 +1601,15 @@ int factor()
             else if(sym == real||sym==integersym)//这是一个个符号
             {
                 if(sym==integersym)
-                    printf("this factor is an integer : %d\n",integer*i);
-                else
-                    printf("this factor is a float : %f\n",floatnum*i);
-
+				{
+					printf("this factor is an integer : %d\n",integer*i);
+					genPcode(LIT,0,integer*i);
+				}
+				else
+				{
+					printf("this factor is a float : %f\n",floatnum*i);
+					genPcode(LIT,0,floatnum*i);
+				}
 				sym = getsym();
 				break;
             }
@@ -1523,8 +1628,11 @@ int factor()
                 if(sym==integersym)
                     printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
                 else if(sym==real)
-                    printf("this factor is a real : %f\n",floatnum*i);
-                else
+				{
+					printf("this factor is a real : %f\n",floatnum*i);
+					genPcode(LIT,0,floatnum*i);
+				}
+				else
 					printf("**** error in factor! ****\n");
 
 				sym = getsym();
@@ -1538,8 +1646,11 @@ int factor()
                 if(sym==integersym)
                     printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
                 else if(sym==real)
-                    printf("this factor is a real : %f\n",floatnum*i);
-                else
+                {
+					printf("this factor is a real : %f\n",floatnum*i);
+					genPcode(LIT,0,floatnum*i);
+				}
+				else
 					printf("**** error in factor! ****\n");
 
 				sym = getsym();
@@ -1548,10 +1659,15 @@ int factor()
             else if(sym == real||sym==integersym)//这是一个个符号
             {
                 if(sym==integersym)
-                    printf("this factor is an integer : %d\n",integer*i);
-                else
-                    printf("this factor is a float : %f\n",floatnum*i);
-
+                {
+					printf("this factor is an integer : %d\n",integer*i);
+					genPcode(LIT,0,integer*i);
+				}
+				else
+				{
+					printf("this factor is a float : %f\n",floatnum*i);
+					genPcode(LIT,0,floatnum*i);
+				}
 				sym = getsym();
 				break;
             }
@@ -1760,3 +1876,17 @@ int searchinSTab(int type,char target[])//在当前定义的函数范围内查表
 	return index;
 }
 /*=======================================*/
+/*中间代码*/
+int genPcode(int f,int op1,double op2)
+{
+	CodeList[C_INDEX].funct = f;
+	CodeList[C_INDEX].opr1 = op1;
+	CodeList[C_INDEX].opr2 = op2;
+	C_INDEX++;
+	if(C_INDEX>=CODEMAX)
+	{
+		printf("**** code list overflow ****\n");
+		return 0;
+	}
+	return 1;
+}
