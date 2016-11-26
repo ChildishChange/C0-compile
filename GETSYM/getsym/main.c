@@ -178,7 +178,11 @@ int main()
 			printf("%c\n",(char)globalTab[i].value);
 
 	}
-    return 0;
+    for(i = 0;i<functTAddr;i++)
+    {
+        printf("begin:%d,end:%d\n",functT[i].begin,functT[i].end);
+    }
+	return 0;
 }
 
 char getch()
@@ -1635,6 +1639,7 @@ int addSTab(int obj,int typ,char name[],double value)//这个要再讨论一下
 	/*
 	如果读入了一个函数，这函数没有被定义//报错就好
 	*/
+
 	globalTab[globalTabAddr].obj = obj;
 	globalTab[globalTabAddr].typ = typ;
 	globalTab[globalTabAddr].normal = 0;
@@ -1657,6 +1662,7 @@ int addSTab(int obj,int typ,char name[],double value)//这个要再讨论一下
 	{
 		functTAddr++;
 		globalTab[globalTabAddr].ref = functTAddr;
+		functT[functTAddr-1].end = globalTabAddr-1;
 		functT[functTAddr].begin = globalTabAddr;
 
 	}
