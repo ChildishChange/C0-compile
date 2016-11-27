@@ -650,3 +650,12 @@ WRT	1	a	输出栈顶元素
 96      STO     1       0.000000
 97      JMP     0       88.000000
 98      JMP     0       65.000000
+
+
+
+TODO:值参表的传递，没有判断数字
+TODO:最后一个函数没有修改end
+TODO:修改行缓冲
+TODO:输出PCODE时
+TODO:一个神一样的BUG
+TODO:错误处理能不能用goto呢
