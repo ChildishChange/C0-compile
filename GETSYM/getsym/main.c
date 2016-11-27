@@ -51,6 +51,7 @@ int _typ;
 char _name[100];
 double _value;
 
+int searchresult = 0;
 
 struct STab//全局符号表
 {
@@ -79,6 +80,8 @@ struct functTab//函数表，只用来存函数内部的变量在符号表里的范围
 {
 	int begin;
 	int end;
+	int paranum ;
+	int startindex ;
 }functT[300];
 int functTAddr = 0;
 
@@ -88,6 +91,12 @@ struct arrayTab//数组表
 	int size;
 }arrayT[300];
 int arrayTAddr = 0;
+
+struct arrayconst
+{
+	char s[100];
+}constarray[300];
+int constarrayindex = 0;
 
 struct StrTab
 {
@@ -101,7 +110,9 @@ int addarrayTab();
 int addStrTab();
 /*==============符号表================*/
 /*==============中间代码==============*/
-
+int locate1 = 0;
+int locate2 = 0;//用于条件的地址回填
+int curfunct = 0;//目前所处函数在函数表中的位置
 int genPcode(int f,int op1,double op2);
 
 struct Pcode
@@ -111,7 +122,10 @@ struct Pcode
 	double opr2;
 }CodeList[CODEMAX];
 int C_INDEX = 0;
-const enum fct  {LOD = 1,LIT,STO,JMP,JPC,OPR,CAL,INT,RED,WRT};
+const enum fct  {LOD = 1,LIT,STO,JMP,JPC,OPR,CAL,INT,RED,WRT,LOAD,STOR};
+const char *cd[] = {"LOD","LIT","STO","JMP","JPC","OPR","CAL","INT","RED","WRT","LOAD","STOR"};
+
+int searchident(char target[],int type);
 /*==============中间代码==============*/
 /*==============运行栈================*/
 double S[3000];
@@ -164,7 +178,7 @@ int main()
     }
 
     printf("VALUE TYPE NO\n");
-	genPcode(INT,0,3);
+	genPcode(INT,0,3);//一开始，设置三个值
     sym = getsym();
     if(sym==constsym)
     {
@@ -197,14 +211,14 @@ int main()
 			printf("%c\n",(char)globalTab[i].value);
 
 	}
-    for(i = 0;i<functTAddr;i++)
+    for(i = 0;i<functTAddr+1;i++)
     {
         printf("begin:%d,end:%d\n",functT[i].begin,functT[i].end);
     }
 
 	for(i =0;i<C_INDEX;i++)
 	{
-		printf("%d\t%d\t%f\n",CodeList[i].funct,CodeList[i].opr1,CodeList[i].opr2);
+		printf("%d\t%s\t%d\t%f\n",i,cd[CodeList[i].funct-1],CodeList[i].opr1,CodeList[i].opr2);
 	}
 	return 0;
 }
@@ -976,9 +990,11 @@ int functwith(int kind,char name[])//已经预读左括号
 		strcpy(_name,name);
 		if(searchinSTab(2,_name)==-1)
 		{
-			genPcode(INT,0,3);
-			genPcode(CAL,0,C_INDEX);
+			functT[functTAddr].startindex = C_INDEX;
+
+			genPcode(INT,0,3);//函数一开始设置这个值
 			addSTab(_obj,_typ,_name,-1);
+
 			T++;
 		}
 		else
@@ -1028,8 +1044,9 @@ int functwithout(char name[])
 		if(searchinSTab(2,_name)==-1)
 		{
 		//	T+=3;
+
+			functT[functTAddr].startindex = C_INDEX;
 			genPcode(INT,0,3);
-			genPcode(CAL,0,C_INDEX);
 			addSTab(_obj,_typ,_name,-1);
 			T++;
 		}
@@ -1092,6 +1109,7 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
 			{
 
 				addSTab(_obj,_typ,_name,-1);
+				functT[functTAddr].paranum++;
 				globalTab[globalTabAddr-1].ref = T;
 				T++;//压栈
 			}
@@ -1114,17 +1132,35 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
 
 int valuelist()//有预读,
 {
+    int i;
+	int tmp = functT[curfunct].paranum;
     printf("enter val list\n");
-	do
-    {
-        if(sym == comma)
-		{
-			sym = getsym();
-			expression();
-		}
-        else
-		{	expression();}
-	}while(sym==comma);
+
+
+    if(sym!=rparent)
+	{
+		expression();
+		genPcode(STO,0,globalTab[functT[curfunct].begin+i].adr);
+		i++;
+	}
+	else
+	{
+		printf("out val list\n");
+		return;
+	}
+
+
+	while(sym==comma)
+	{
+		sym = getsym();
+		expression();
+		genPcode(STO,0,globalTab[functT[curfunct].begin+i].adr);
+		i++;
+	}
+
+
+
+
     printf("out val list\n");
 }
 
@@ -1160,6 +1196,8 @@ int statement_s()//并不知道语句列的结束符号是什么,语句列之后总是会有}
 
 int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 {
+	char name[100];
+	int result;
     printf("enter statement\n");
     switch (sym)
     {
@@ -1186,7 +1224,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 			sym = getsym();//下一句话的
             break;
 
-		case returnsym:
+		case returnsym://应该是返回到某个地方吧，暂时不管你
             printf("enter return\n");
             sym = getsym();
             if(sym==semicolon)
@@ -1233,19 +1271,27 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 
 
         case identsym://函数调用或者赋值
+			strncpy(name,token,100);
             sym = getsym();
             if(sym == lbracket)//数组赋值
             {
-                sym = getsym();
+				sym = getsym();
+				expression();
+				genPcode(INT,0,1);
+				result = searchident(name,2);
+				if(result!=-1)
+				{
+					genPcode(LIT,0,result);
+					genPcode(OPR,0,2);
+				}
 
-                expression();
-                sym = getsym();//=
+				sym = getsym();//=
                 printf("at statement:%s\n",token);
-                if(sym==becomes)
+				if(sym==becomes)
                 {
                     sym = getsym();
                     expression();
-					genPcode(STO,0,0);
+					genPcode(STOR,0,0);
                     sym = getsym();
                 }
 
@@ -1253,27 +1299,46 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             }
             else if(sym == lparent)//函数
             {
+				result = searchident(name,2);
+				if(result!=-1)
+					genPcode(CAL,0,functT[globalTab[searchresult].ref].startindex);
+
                 sym =getsym();
-                if(sym==rparent)
+                /*if(sym==rparent)
                 {
                     printf("calling a function without parameter\n");
                     sym = getsym();//;
                     sym = getsym();//下一个
 					break;
-                }
-				else
-				{
+                }*/
+				/*else
+				{*/
                     printf("calling a function\n");
                     valuelist();//
 					sym = getsym();//;
                     sym = getsym();
-                }
+                /*}*/
             }
             else if(sym == becomes)//赋值
             {
-                 sym = getsym();
+				result = searchident(name,2);
+
+
+				sym = getsym();
                expression();
-               sym = getsym();
+				if(result!=-1)
+                {
+					if(globalTab[result].obj == 1)
+					{
+						;
+					}
+					else
+					{
+
+						genPcode(STO,1,globalTab[result].adr);
+					}
+				}
+			   sym = getsym();
             }
             else
                 ;//ERROR
@@ -1289,9 +1354,12 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
     }
     printf("out statement\n");
 }
-//完成，没有问题
+//完成，没有问题 pcode
 int ifcondition()//因为是读入了一个if才判断出来进入这个分支
 {
+	int backset1 = 0;
+	int backset2 = 0;
+
     printf("enter ifcondition\n");
     sym = getsym();//左括号
     if(sym!=lparent)//这里的错误处理可能有点难
@@ -1301,41 +1369,59 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
     }
     condition();//预读一个括号
 
-    if(sym!=rparent)//这里发现了第一个问题
+	genPcode(JPC,0,0);
+	backset1 = C_INDEX-1;
+
+	if(sym!=rparent)//这里发现了第一个问题
         printf("**** wrong symbol in condition! ****\n");//
 
 	sym = getsym();
     statement();//在跳出expression之前yuduyige xiaokuohao
- //   sym = getsym();//读else
- //   printf("%s\n",token);
+
 
     if(sym == elsesym)
     {
+		genPcode(JMP,0,0);
+		backset2 = C_INDEX-1;
+		CodeList[backset1].opr2 = C_INDEX;
         sym = getsym();
         statement();
+		CodeList[backset2].opr2 = C_INDEX;
     }
+	else
+	{
+		CodeList[backset1].opr2 = C_INDEX;
+	}
+
     printf("out ifcondition\n");
 }
-//完成
+//完成 pcode
 int condition()//进入前没有预读
 {
+	int symtmp;
     printf("enter condition\n");
 	sym = getsym();
     expression();
 
+	symtmp = sym-22;
+
 	if(sym>=equal&&sym<=noequal)
 	{
+
+		genPcode(INT,0,1);
 		printf("this is a %s\n",_symbol[sym]);
 		sym = getsym();
  //   printf("%d\n",integer);
 		expression();//可能读到关系符号然后再跟一个表达式，也可能是
 		//这里也要错误处理
+		genPcode(OPR,symtmp,0);//
 		printf("out condition\n");
+
 
 	}
 	else if(sym==rparent||sym==semicolon)
 	{
-
+		genPcode(OPR,12,0);//直接判断栈顶
 		printf("out condition\n");
 		return;
 
@@ -1350,15 +1436,25 @@ int condition()//进入前没有预读
 //完成，没有问题
 int whilestatement()
 {
+	int backset1;
+	int backset2;
+
     printf("enter while\n");
     sym = getsym();
     if(sym==lparent)
     {
+		backset1 = C_INDEX;
+
         condition();
+		genPcode(JPC,0,0);
 		//出来之前预读了）
-        sym = getsym();
+	    backset2 = C_INDEX-1;
+		sym = getsym();
         statement();
-    }
+		genPcode(JMP,0,backset1);
+		CodeList[backset2].opr2 = C_INDEX;
+
+	}
 	else
 	{
 		;
@@ -1368,27 +1464,86 @@ int whilestatement()
 //完成
 int forstatement()//错误处理
 {
+	int backset1;
+	int backset2;
+	char name[100];
+	char name1[100];
+	char name2[100];
+	int result;
+	int result1;
 	printf("enter for\n");
     sym = getsym();//(
 	sym = getsym();//标识符
+	strncpy(name,token,100);
     sym = getsym();//=
     sym = getsym();
     expression();
+	result = searchident(name,2);
+	if(result!=-1)
+	{
+		genPcode(STO,0,globalTab[result].adr);
+	}
 
+	backset1 = C_INDEX;
     condition();
-
+	genPcode(JPC,0,0);
+	backset2 = C_INDEX-1;
     sym = getsym();//标识符
+	strncpy(name1,token,100);
+
     sym = getsym();//=
     sym = getsym();//标识符
+
+	result = searchident(token,2);
+	if(result!=-1)
+	{
+		if(globalTab[result].obj == 1)
+			genPcode(LOD,2,result);
+		else
+		{
+			genPcode(LOD,1,globalTab[result].adr);
+		}
+	}
+	else
+	{
+		printf("**** using undefined variable ****\n");
+	}
+
     sym = getsym();//+-
+	strncmp(name2,token,100);
     sym = getsym();//integersym
+	genPcode(LIT,0,integer);
+	if(name2[0]==minus)
+	{
+		genPcode(OPR,0,3);
+	}
+	else
+	{
+		genPcode(OPR,0,2);
+	}
+	result1 = searchident(name1,2);
+	if(result1!=-1)
+	{
+		if(globalTab[result].obj == 1)
+			printf("**** can't revaluate const ****\n");
+		else
+		{
+			genPcode(STO,1,globalTab[result].adr);
+		}
+	}
+	else
+	{
+		printf("**** using undefined variable ****\n");
+	}
     sym = getsym();//rparent
     sym = getsym();
     statement();
+	genPcode(JMP,0,backset1);
+	CodeList[backset2].opr2 = C_INDEX;
     printf("out for\n");
 
 }
-//scanf完毕，没有问题
+//scanf完毕，没有问题,pcode已完成
 int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 {
     printf("enter scanf\n");
@@ -1402,6 +1557,13 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
             if(sym==identsym)
             {
                 printf("%s ",token);
+
+				searchresult = searchident(token,2);
+				if(searchresult!=-1)
+				{
+					genPcode(RED,0,globalTab[searchresult].adr);
+
+				}
                 sym = getsym();//读入一个逗号
 
             }
@@ -1421,7 +1583,7 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
     }
     printf("\nout scanf\n");
 }
-//over
+//over Pcode完成
 int printfstatement()//理论上printf也能写完了
 {
     printf("enter print\n");
@@ -1433,12 +1595,18 @@ int printfstatement()//理论上printf也能写完了
         if(sym==str)
         {
             printf("%s\n",token);
-            sym = getsym();
+
+			strncmp(constarray[constarrayindex].s,token,100);
+			genPcode(WRT,2,constarrayindex);
+			constarrayindex++;
+
+			sym = getsym();
             if(sym==comma)
 			{
 				sym = getsym();
 				printf("print 1:%s:%s\n",token,_symbol[sym]);
 				expression();
+				genPcode(WRT,1,0);
 			}
             else if(sym==rparent)
             {
@@ -1452,6 +1620,7 @@ int printfstatement()//理论上printf也能写完了
         else
 		{
             expression();//这里的调用之前预读了，出来之前也预读了）
+			genPcode(WRT,1,0);
 		}
 	}
     else//没有左括号
@@ -1461,24 +1630,11 @@ int printfstatement()//理论上printf也能写完了
 
 }
 
-
+//pcode已完成
 int expression()
 {
 	int op ;
     printf("enter expression\n");
-/* 	do{
-        if(sym==minus||sym==add)
-        {
-            //cichu yao zhuyi
-            sym = getsym();
-            term();
-        }
-        else
-        {
-
-            term();
-        }
-	}while(sym==add||sym==minus);*/
 
    if(sym==minus||sym==add)
     {//cichu yao zhuyi
@@ -1504,21 +1660,11 @@ int expression()
 	}
 	printf("out expression\n");
 }
-
+//pcode已完成
 int term()//调用term前预读了一个
 {
 	int op ;
     printf("enter term\n");
-  /*  do{
-        if(sym==divi||sym==multi)
-        {
-            sym = getsym();
-            factor();
-        }
-        else
-            factor();
-
-    }while(sym==divi||sym==multi);*/
 
     factor();
 	while(sym==divi||sym==multi)
@@ -1533,27 +1679,28 @@ int term()//调用term前预读了一个
 	}
     printf("out term\n");
 }
-
+//pcode已完成
 int factor()
 {
     printf("enter factor\n");
     char tmp[100];
+	int result;
     int i = 1;
     switch (sym)
     {
 		case real:
             printf("this factor is a real : %f\n",floatnum);
-            genPcode(LIT,0,floatnum);
+            genPcode(LIT,2,floatnum);
 			sym = getsym();
             break;
         case integersym:
             printf("this factor is an integer : %d\n",integer);
-            genPcode(LIT,0,integer);
+            genPcode(LIT,1,integer);
 			sym = getsym();
             break;
         case cha://字符
             printf("this factor is a char %c",ch);
-			genPcode(LIT,0,ch);
+			genPcode(LIT,3,ch);
             sym = getsym();
             break;
         case minus://这是有符号数的第一个符号，实数可能有两个，整数只有一个
@@ -1565,12 +1712,13 @@ int factor()
                 sym = getsym();
                 if(sym==integersym)
 				{
-					printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
+					printf("this factor is a real : %f\n",integer*i);
+					genPcode(LIT,2,integer*i);
                 }
 				else if(sym==real)
 				{
 					printf("this factor is a real : %f\n",floatnum*i);
-					genPcode(LIT,0,floatnum*i);
+					genPcode(LIT,2,floatnum*i);
                 }
 				else
 					printf("**** error in factor! ****\n");
@@ -1585,12 +1733,13 @@ int factor()
                 sym = getsym();
                 if(sym==integersym)
                 {
-					printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
-                }
+					printf("this factor is a real : %f\n",integer*i);
+					genPcode(LIT,2,integer*i);
+				}
 				else if(sym==real)
                 {
 					printf("this factor is a real : %f\n",floatnum*i);
-					genPcode(LIT,0,floatnum*i);
+					genPcode(LIT,2,floatnum*i);
 				}
 				else
 					printf("**** error in factor! ****\n");
@@ -1603,12 +1752,12 @@ int factor()
                 if(sym==integersym)
 				{
 					printf("this factor is an integer : %d\n",integer*i);
-					genPcode(LIT,0,integer*i);
+					genPcode(LIT,2,integer*i);
 				}
 				else
 				{
 					printf("this factor is a float : %f\n",floatnum*i);
-					genPcode(LIT,0,floatnum*i);
+					genPcode(LIT,2,floatnum*i);
 				}
 				sym = getsym();
 				break;
@@ -1621,16 +1770,19 @@ int factor()
         case add:
             i*=1;
             sym = getsym();
-            if(sym==minus)//这是实数的第二个符号
+            if(sym==minus)
             {
                 i*=-1;
                 sym = getsym();
                 if(sym==integersym)
-                    printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
-                else if(sym==real)
+				{
+                    printf("this factor is a real : %f\n",integer*i);
+					genPcode(LIT,2,integer*i);
+				}
+				else if(sym==real)
 				{
 					printf("this factor is a real : %f\n",floatnum*i);
-					genPcode(LIT,0,floatnum*i);
+					genPcode(LIT,2,floatnum*i);
 				}
 				else
 					printf("**** error in factor! ****\n");
@@ -1644,8 +1796,11 @@ int factor()
                 i*=1;
                 sym = getsym();
                 if(sym==integersym)
-                    printf("**** wrong！ can't define integer in this form : %d ****\n",integer*i);
-                else if(sym==real)
+				{
+					printf("this factor is a real : %f\n",integer*i);
+					genPcode(LIT,0,integer*i);
+                }
+				else if(sym==real)
                 {
 					printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,0,floatnum*i);
@@ -1656,17 +1811,17 @@ int factor()
 				sym = getsym();
 				break;
             }
-            else if(sym == real||sym==integersym)//这是一个个符号
+            else if(sym == real||sym==integersym)//这是一个符号
             {
                 if(sym==integersym)
                 {
 					printf("this factor is an integer : %d\n",integer*i);
-					genPcode(LIT,0,integer*i);
+					genPcode(LIT,1,integer*i);
 				}
 				else
 				{
 					printf("this factor is a float : %f\n",floatnum*i);
-					genPcode(LIT,0,floatnum*i);
+					genPcode(LIT,2,floatnum*i);
 				}
 				sym = getsym();
 				break;
@@ -1681,22 +1836,27 @@ int factor()
 		case lparent://括号表达式
             sym = getsym();
             expression();
-
-            if(sym != rparent)
+			if(sym != rparent)
                 printf("**** wrong in factor l e l ****\n");
 
 			sym = getsym();
 			break;
 
 		case identsym://可能是变量或者数组或者函数调用
+			//就是出现在等号右边的情况
 			//符号表的时候，这里要处理一下
             strcpy(tmp,token);
       		sym = getsym();
 
             if(sym==lparent)//函数
             {
+				//如果这个函数返回值为空报错
 				printf("this factor is a function:%s\n",tmp);
-                sym = getsym();
+                result = searchident(tmp,1);
+				if(result!=-1)
+					genPcode(CAL,0,functT[globalTab[result].ref].startindex);
+
+				sym = getsym();
 				valuelist();
 				if(sym!=rparent)
 				{
@@ -1709,8 +1869,19 @@ int factor()
             else if(sym == lbracket)//数组
             {
 				printf("this factor is a array:%s\n",tmp);
+
                 sym = getsym();
                 expression();//跳出之前已经读了]
+				genPcode(INT,0,1);
+				result = searchident(tmp,2);
+				if(result!=-1)
+				{
+					genPcode(LIT,0,result);
+					genPcode(OPR,0,2);
+					genPcode(LOAD,0,0);//能够在符号表中load下标为栈顶元素的值的值到栈顶
+				}
+				else
+				{printf("**** using undefined array ****\n");}
 
 				sym = getsym();
 				break;
@@ -1719,6 +1890,21 @@ int factor()
             else//变量啦
             {
                 printf("this factor is a variable:%s\n",tmp);
+				result = searchident(tmp,2);
+				if(result!=-1)
+				{
+					if(globalTab[result].obj == 1)
+						genPcode(LOD,2,result);
+					else
+					{
+
+						genPcode(LOD,1,globalTab[result].adr);
+					}
+				}
+				else
+				{
+					printf("**** using undefined variable ****\n");
+				}
 				//读到标识符之前已经预读了，此处不用getsym
 				break;
             }
@@ -1890,3 +2076,38 @@ int genPcode(int f,int op1,double op2)
 	}
 	return 1;
 }
+int searchident(char target[],int type)
+{
+	int i = 0;
+
+	switch(type)
+	{
+		case 1://查函数
+			for(i = 1;i<=functTAddr;i++)
+			{
+				if(strncmp(globalTab[functT[i].begin].name,target,20)==0)
+				{
+					return i;
+				}
+			}
+			break;
+		case 2://变量
+			for(i = functT[functTAddr].begin;i<=globalTabAddr;i++)
+			{
+				if(strncmp(globalTab[i].name,target,20)==0)
+				{
+					return i;
+				}
+			}
+			for(i = functT[0].begin;i<=functT[0].end;i++)
+			{
+				if(strncmp(globalTab[i].name,target,20)==0)
+				{
+					return i;
+				}
+			}
+			break;
+	}
+	return -1;
+}
+/*需要一个新函数在运行栈里找。。。*/
