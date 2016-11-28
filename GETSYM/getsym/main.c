@@ -1223,7 +1223,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				result = searchident(name,2);
 				if(result!=-1)
 				{
-					genPcode(LIT,0,result);
+					genPcode(LIT,0,globalTab[result].adr);
 					genPcode(OPR,0,2);
 				}
 
