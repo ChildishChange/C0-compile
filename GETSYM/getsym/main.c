@@ -154,7 +154,7 @@ int main()
         functwithout(buffer);
 	}
 
-	printf("no\tname\tobj\ttyp\tlink\tref\tvalue\n");
+	printf("no\tname\tobj\ttyp\tlink\tref\tvalue\tnormal\n");
 	for(i = 0;i<globalTabAddr;i++)
 	{
 		printf("%d\t",i);
@@ -164,14 +164,15 @@ int main()
 		printf("%d\t",globalTab[i].link);
 		printf("%d\t",globalTab[i].ref);
 		if(globalTab[i].typ==1)
-			printf("%d\n",(int)globalTab[i].value);
+			printf("%d\t",(int)globalTab[i].value);
 		else if(globalTab[i].typ==2)
-			printf("%.2f\n",globalTab[i].value);
+			printf("%.2f\t",globalTab[i].value);
 		else
-			printf("%c\n",(char)globalTab[i].value);
+			printf("%c\t",(char)globalTab[i].value);
+        printf("%d\n",globalTab[i].normal);
 
 	}
-    for(i = 1;i<functTAddr+1;i++)
+    for(i = 0;i<functTAddr+1;i++)
     {
         printf("begin:%d,end:%d,start index:%d\n",functT[i].begin,functT[i].end,functT[i].startindex);
     }
@@ -474,6 +475,8 @@ int constdec()
 							_value = integer*sign;
 							if(searchinSTab(1,_name)==-1)
 							{
+
+
 								addSTab(_obj,_typ,_name,_value);
 							}
 							else
@@ -533,6 +536,7 @@ int constdec()
 							}
 							if(searchinSTab(1,_name)==-1)
 							{
+
 								addSTab(_obj,_typ,_name,_value);
 							}
 							else
@@ -581,6 +585,7 @@ int constdec()
                             _value = ch;
 							if(searchinSTab(1,_name)==-1)
 							{
+
 								addSTab(_obj,_typ,_name,_value);
 							}
 							else
@@ -611,8 +616,11 @@ int variadec()
     char tmp[100];
 	_obj = 2;
     int columntmp;
+	//1为全局，2为局部
+	int g_or_l;
     while(sym==floatsym||sym==intsym||sym==charsym)
     {
+		g_or_l = (functTAddr==0)?1:2;
         switch (sym)
         {
             case intsym:
@@ -642,6 +650,18 @@ int variadec()
 							{
 								addSTab(_obj,_typ,_name,-1);
 								globalTab[globalTabAddr-1].ref = T;
+								if(g_or_l==1)
+								{
+									globalTab[globalTabAddr-1].normal = 1;
+									globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+									//3是DL——RA——等等乱七八糟
+								}
+								else
+								{
+									globalTab[globalTabAddr-1].normal = 2;
+									globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+								}
+
 								T+=integer;//压栈
 								arrayTAddr++;
 								globalTabAddr+=integer-1;
@@ -667,11 +687,20 @@ int variadec()
                     }
                     else if(sym ==comma)//变量
                     {
-                        printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
+                        printf("declare an integer named : %s\n",tmp);
 						if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
 							globalTab[globalTabAddr-1].ref = T;
+							if(g_or_l==1)
+							{
+								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+								//3是DL——RA——等等乱七八糟
+							}
+							else
+							{
+								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+							}
 							T++;//压栈
 						}
 						else
@@ -681,11 +710,22 @@ int variadec()
                     }
                     else if(sym == semicolon)//变量
                     {
-                        printf("at %d:%d declare an integer named : %s\n",Line,columntmp-strlen(tmp),tmp);
+                        printf("declare an integer named : %s\n",tmp);
                         if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
 							globalTab[globalTabAddr-1].ref = T;
+							if(g_or_l==1)
+							{
+								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+								globalTab[globalTabAddr-1].normal = 1;
+								//3是DL——RA——等等乱七八糟
+							}
+							else
+							{
+								globalTab[globalTabAddr-1].normal = 2;
+								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+							}
 							T++;//压栈
 						}
 						else
@@ -712,10 +752,11 @@ int variadec()
             case floatsym:
                 _typ = 2;
 				do{
-					sym = getsym();
+                    sym = getsym();
 					strcpy(tmp,token);
 					strcpy(_name,token);
 					columntmp = Column;//line大概也要一个
+
 					sym = getsym();
                     if(sym==lbracket)
                     {
@@ -737,6 +778,17 @@ int variadec()
 							{
 								addSTab(_obj,_typ,_name,-1);
 								globalTab[globalTabAddr-1].ref = T;
+								if(g_or_l==1)
+								{
+									globalTab[globalTabAddr-1].normal = 1;
+									globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+									//3是DL——RA——等等乱七八糟
+								}
+								else
+								{
+									globalTab[globalTabAddr-1].normal = 2;
+									globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+								}
 								T+=integer;//压栈
 								arrayTAddr++;
 								globalTabAddr+=integer-1;
@@ -769,6 +821,17 @@ int variadec()
 						{
 							addSTab(_obj,_typ,_name,-1);
 							globalTab[globalTabAddr-1].ref = T;
+							if(g_or_l==1)
+							{
+								globalTab[globalTabAddr-1].normal = 1;
+								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+								//3是DL——RA——等等乱七八糟
+							}
+							else
+							{
+								globalTab[globalTabAddr-1].normal = 2;
+								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+							}
 							T++;//压栈
 						}
 						else
@@ -778,11 +841,23 @@ int variadec()
                     }
                     else if(sym == semicolon)
                     {
-                        printf("declare an float named : %s\n",Line,columntmp-strlen(tmp),tmp);
+
+                        printf("declare an float named : %s\n",tmp);
                         if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
 							globalTab[globalTabAddr-1].ref = T;
+							if(g_or_l==1)
+							{
+								globalTab[globalTabAddr-1].normal = 1;
+								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+								//3是DL——RA——等等乱七八糟
+							}
+							else
+							{
+								globalTab[globalTabAddr-1].normal = 2;
+								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+							}
 							T++;//压栈
 						}
 						else
@@ -833,6 +908,17 @@ int variadec()
 							{
 								addSTab(_obj,_typ,_name,-1);
 								globalTab[globalTabAddr-1].ref = T;
+								if(g_or_l==1)
+								{
+									globalTab[globalTabAddr-1].normal = 1;
+									globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+									//3是DL——RA——等等乱七八糟
+								}
+								else
+								{
+									globalTab[globalTabAddr-1].normal = 2;
+									globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+								}
 								T+=integer;//压栈
 								arrayTAddr++;
 								globalTabAddr+=integer-1;
@@ -865,6 +951,17 @@ int variadec()
 						{
 							addSTab(_obj,_typ,_name,-1);
 							globalTab[globalTabAddr-1].ref = T;
+							if(g_or_l==1)
+							{
+								globalTab[globalTabAddr-1].normal = 1;
+								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+								//3是DL——RA——等等乱七八糟
+							}
+							else
+							{
+								globalTab[globalTabAddr-1].normal = 2;
+								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+							}
 							T++;//压栈
 						}
 						else
@@ -874,11 +971,22 @@ int variadec()
                     }
                     else if(sym == semicolon)
                     {
-                        printf("at %d:%d declare an char named : %s\n",Line,columntmp-strlen(tmp),tmp);
+                        printf("declare an char named : %s\n",tmp);
 						if(searchinSTab(1,_name)==-1)
 						{
 							addSTab(_obj,_typ,_name,-1);
 							globalTab[globalTabAddr-1].ref = T;
+							if(g_or_l==1)
+							{
+								globalTab[globalTabAddr-1].normal = 1;
+								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
+								//3是DL——RA——等等乱七八糟
+							}
+							else
+							{
+								globalTab[globalTabAddr-1].normal = 2;
+								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
+							}
 							T++;//压栈
 						}
 						else
@@ -912,6 +1020,7 @@ int variadec()
 //当读到左括号才调用这个函数
 int functwith(int kind,char name[])//已经预读左括号
 {
+
     while(kind>=1&&kind<=3)
     {
         switch (kind)
@@ -933,6 +1042,7 @@ int functwith(int kind,char name[])//已经预读左括号
         }
 		_obj = 3;
 		strcpy(_name,name);
+
 		if(searchinSTab(2,_name)==-1)
 		{
 			functT[functTAddr+1].startindex = C_INDEX;
@@ -945,6 +1055,7 @@ int functwith(int kind,char name[])//已经预读左括号
 		else
 		{
 			printf("**** multi defined in funct ****\n");
+			return;
 		}
 		paralist();
 
@@ -995,6 +1106,7 @@ int functwithout(char name[])
 		else
 		{
 			printf("**** multi defined in funct ****\n");
+			return;
 		}
 
         paralist();
@@ -1046,7 +1158,16 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
 			if(searchinSTab(1,_name)==-1)
 			{
 
+
 				addSTab(_obj,_typ,_name,-1);
+				if(functTAddr==0)
+				{
+					globalTab[globalTabAddr-1].normal = 1;
+				}
+				else
+				{
+					globalTab[globalTabAddr-1].normal = 2;
+				}
 				functT[functTAddr].paranum++;
 				globalTab[globalTabAddr-1].ref = T;
 				T++;//压栈
@@ -1209,10 +1330,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             statement_s();
             sym = getsym();
             break;
-
-
-
-        case identsym://函数调用或者赋值
+		case identsym://函数调用或者赋值
 			strncpy(name,token,100);
             sym = getsym();
             if(sym == lbracket)//数组赋值
@@ -1281,6 +1399,10 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 						genPcode(STO,1,globalTab[result].adr);
 					}
 				}
+				else if(result==-1)
+				{
+					printf("**** undefined!!!! ****\n");
+				}
 			   sym = getsym();
             }
             else
@@ -1289,8 +1411,8 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 			}
             break;
 		default :
-            printf("****in statement : what the fuck is this ****\n");
-            sym = getsym();
+            printf("****in statement : what the fuck is this \"%s\" ****\n",token);
+            //sym = getsym();会有bug
 			break;
     }
     printf("out statement\n");
@@ -1487,6 +1609,7 @@ int forstatement()//错误处理
 //scanf完毕，没有问题,pcode已完成
 int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 {
+	int result = 0;
     printf("enter scanf\n");
     sym = getsym();//读左括号
     if(sym==lparent)
@@ -1499,10 +1622,10 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
             {
                 printf("%s ",token);
 
-				searchresult = searchident(token,2);
-				if(searchresult!=-1)
+				result = searchident(token,2);
+				if(result!=-1)
 				{
-					genPcode(RED,0,globalTab[searchresult].adr);
+					genPcode(RED,0,globalTab[result].adr);
 
 				}
                 sym = getsym();//读入一个逗号
@@ -1905,6 +2028,7 @@ int addSTab(int obj,int typ,char name[],double value)//这个要再讨论一下
 	{
 		functTAddr++;
 		globalTab[globalTabAddr].ref = functTAddr;
+		//这里会遗留bug
 		functT[functTAddr-1].end = globalTabAddr-1;
 		functT[functTAddr].begin = globalTabAddr;
 
@@ -1921,6 +2045,7 @@ int addSTab(int obj,int typ,char name[],double value)//这个要再讨论一下
 
 int searchinSTab(int type,char target[])//在当前定义的函数范围内查表
 {
+    printf("seadawdaw type :%d\n\n",type);
 	int index = -1;
 	int i = 0;
 	switch (type)
@@ -1952,30 +2077,42 @@ int searchinSTab(int type,char target[])//在当前定义的函数范围内查表
 		case 2://函数定义
 			if(functTAddr==0)
 			{
+				if(globalTabAddr==0)
+				{
+					printf("22\n\n\n");
+					functT[0].begin = 0;
+					functT[0].end = 0;
+					functT[0].paranum = 0;
+					functT[0].startindex = 0;
+
+				}
 				for(i = 0;i<globalTabAddr-1;i++)
 				{
 					if(strncmp(globalTab[i].name,target,20)==0)
 					{
 						index = i;
+						printf("1  index:%d\n",index);
 						break;
 					}
 				}
 			}
 			else
 			{
+			    printf("\n\n1\n\n");
 				for(i = 0;i<=functT[0].end;i++)
 				{
 					if(strncmp(globalTab[i].name,target,20)==0)
 					{
-						index = i;
+						index = i;printf("2  index:%d\n",index);
 						break;
 					}
 				}
-				for(i = 1;i<functTAddr;i++)
+				printf("\n\n2\n\n");
+				for(i = 1;i<=functTAddr;i++)
 				{
 					if(strncmp(globalTab[functT[i].begin].name,target,20)==0)
 					{
-						index = i;
+						index = i;printf("3  index:%d\n",index);
 						break;
 					}
 				}
@@ -2007,7 +2144,7 @@ int genPcode(int f,int op1,double op2)
 int searchident(char target[],int type)
 {
 	int i = 0;
-
+	printf("*************************** %s\n",target);
 	switch(type)
 	{
 		case 1://查函数
@@ -2019,23 +2156,27 @@ int searchident(char target[],int type)
 				}
 			}
 			break;
-		case 2://变量
-			for(i = functT[functTAddr].begin;i<=globalTabAddr;i++)
+		case 2://变量返回局部变量的 ，返回全局变量的
+			for(i = functT[functTAddr].begin;i<=globalTabAddr;i++)//这里是局部的
 			{
 				if(strncmp(globalTab[i].name,target,20)==0)
 				{
+				//	if(globalTab[i].normal)
+					printf("1////%d\n",i);
 					return i;
 				}
 			}
-			for(i = functT[0].begin;i<=functT[0].end;i++)
+			for(i = functT[0].begin;i<=functT[0].end;i++)//这里是全局的
 			{
 				if(strncmp(globalTab[i].name,target,20)==0)
 				{
+					printf("2////%d\n",i);
 					return i;
 				}
 			}
 			break;
 	}
+	printf("3////%d\n",i);
 	return -1;
 }
 /*需要一个新函数在运行栈里找。。。*/
