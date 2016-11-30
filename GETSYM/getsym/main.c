@@ -97,6 +97,7 @@ int constarrayindex = 0;
 
 int searchinSTab(int type,char target[]);
 int addSTab(int obj,int typ,char name[],double value);
+int judgeType(int i);
 /*==============中间代码==============*/
 int curfunct = 0;//目前所处函数在函数表中的位置
 int genPcode(int f,int op1,double op2);
@@ -1261,6 +1262,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 {
 	char name[100];
 	int result;
+	int rType;
     printf("enter statement\n");
     switch (sym)
     {
@@ -1337,12 +1339,18 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             {
 				sym = getsym();
 				expression();
-				genPcode(INT,0,1);
+				//genPcode(INT,0,1);
 				result = searchident(name,2);
 				if(result!=-1)
 				{
+					rType = judgeType(result);
 					genPcode(LIT,0,globalTab[result].adr);
 					genPcode(OPR,0,2);
+				}
+				else
+				{
+					printf("1350 NOT FOUND!\n");
+					return;
 				}
 
 				sym = getsym();//=
@@ -1352,7 +1360,15 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
                 {
                     sym = getsym();
                     expression();
-					genPcode(STOR,0,0);
+					if(rType==2)
+					{
+						genPcode(STOR,1,0);
+					}
+					else if(rType==3)
+					{
+						genPcode(STOR,2,0);
+					}
+					//genPcode(STOR,1,0);
                     sym = getsym();
                 }
 				else
@@ -1389,15 +1405,31 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				expression();
 				if(result!=-1)
                 {
-					if(globalTab[result].obj == 1)
+					rType = judgeType(result);
+					if(rType==1)
 					{
+						printf("**** YOU CAN'T RE VALUATE A CONSTANT ****\n");
+						return;
+					}
+					else if(rType==2)
+					{
+						genPcode(STO,1,globalTab[result].adr);
+					}
+					else if(rType==3)
+					{
+						genPcode(STO,2,globalTab[result].adr);
+					}
+
+					/*if(globalTab[result].obj == 1)
+					{
+
 						printf("**** YOU CAN'T RE VALUATE A CONSTANT ****\n");
 						return;
 					}
 					else
 					{
 						genPcode(STO,1,globalTab[result].adr);
-					}
+					}*/
 				}
 				else if(result==-1)
 				{
@@ -1527,6 +1559,7 @@ int whilestatement()
 //完成
 int forstatement()//错误处理
 {
+	int rType;
 	int backset1;
 	int backset2;
 	char name[100];
@@ -1544,7 +1577,25 @@ int forstatement()//错误处理
 	result = searchident(name,2);
 	if(result!=-1)
 	{
-		genPcode(STO,0,globalTab[result].adr);
+		rType = judgeType(result);
+		if(rType==1)
+		{
+			printf("1583\n");
+			return;
+		}
+		else if(rType==2)
+		{
+			genPcode(STO,1,globalTab[result].adr);
+		}
+		else if(rType==3)
+		{
+			genPcode(STO,2,globalTab[result].adr);
+		}
+
+	}
+	else
+	{
+		printf("1598 cant find\n");
 	}
 
 	backset1 = C_INDEX;
@@ -1560,16 +1611,29 @@ int forstatement()//错误处理
 	result = searchident(token,2);
 	if(result!=-1)
 	{
-		if(globalTab[result].obj == 1)
+	/*	if(globalTab[result].obj == 1)
 			genPcode(LOD,2,result);
 		else
 		{
 			genPcode(LOD,1,globalTab[result].adr);
+		}*/
+		rType = judgeType(result);
+		if(rType==1)
+		{
+			genPcode(LOD,1,result);
+		}
+		else if(rType==2)
+		{
+			genPcode(LOD,2,globalTab[result].adr);
+		}
+		else if(rType==3)
+		{
+			genPcode(LOD,3,globalTab[result].adr);
 		}
 	}
 	else
 	{
-		printf("**** using undefined variable ****\n");
+		printf("1636**** using undefined variable ****\n");
 	}
 
     sym = getsym();//+-
@@ -1587,11 +1651,25 @@ int forstatement()//错误处理
 	result1 = searchident(name1,2);
 	if(result1!=-1)
 	{
-		if(globalTab[result].obj == 1)
+		/*if(globalTab[result].obj == 1)
 			printf("**** can't revaluate const ****\n");
 		else
 		{
 			genPcode(STO,1,globalTab[result].adr);
+		}*/
+		rType = judgeType(result1);
+		if(rType==1)
+		{
+			printf("1663**** can't revaluate const ****\n");
+			return;
+		}
+		else if(rType==2)
+		{
+			genPcode(STO,1,globalTab[result].adr);
+		}
+		else if(rType==3)
+		{
+			genPcode(STO,2,globalTab[result].adr);
 		}
 	}
 	else
@@ -1609,6 +1687,7 @@ int forstatement()//错误处理
 //scanf完毕，没有问题,pcode已完成
 int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 {
+	int rType;
 	int result = 0;
     printf("enter scanf\n");
     sym = getsym();//读左括号
@@ -1625,7 +1704,21 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 				result = searchident(token,2);
 				if(result!=-1)
 				{
-					genPcode(RED,0,globalTab[result].adr);
+					rType = judgeType(result);
+					if(rType==1)
+					{
+						printf("1710\n");
+						return;
+					}
+					else if(rType==2)
+					{
+						genPcode(RED,1,globalTab[result].adr);
+					}
+					else if(rType==3)
+					{
+						genPcode(RED,2,globalTab[result].adr);
+					}
+				//	genPcode(RED,0,globalTab[result].adr);
 
 				}
                 sym = getsym();//读入一个逗号
@@ -1746,6 +1839,7 @@ int term()//调用term前预读了一个
 //pcode已完成
 int factor()
 {
+	int rType;
     printf("enter factor\n");
     char tmp[100];
 	int result;
@@ -1936,13 +2030,22 @@ int factor()
 
                 sym = getsym();
                 expression();//跳出之前已经读了]
-				genPcode(INT,0,1);
+				//genPcode(INT,0,1);
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
 					genPcode(LIT,0,result);
 					genPcode(OPR,0,2);
-					genPcode(LOAD,0,0);//能够在符号表中load下标为栈顶元素的值的值到栈顶
+					rType = judgeType(result);
+					if(rType==2)
+					{
+						genPcode(LOAD,1,0);
+					}
+					else if(rType==3)
+					{
+						genPcode(LOAD,2,0);
+					}
+				//	genPcode(LOAD,0,0);//能够在符号表中load下标为栈顶元素的值的值到栈顶
 				}
 				else
 				{printf("**** using undefined array ****\n");}
@@ -1957,13 +2060,26 @@ int factor()
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
-					if(globalTab[result].obj == 1)
+					rType = judgeType(result);
+					if(rType==1)
+					{
+						genPcode(LOD,1,result);
+					}
+					else if(rType==2)
+					{
+						genPcode(LOD,2,globalTab[result].adr);
+					}
+					else if(rType==3)
+					{
+						genPcode(LOD,3,globalTab[result].adr);
+					}
+				/*	if(globalTab[result].obj == 1)
 						genPcode(LOD,2,result);
 					else
 					{
 
 						genPcode(LOD,1,globalTab[result].adr);
-					}
+					}*/
 				}
 				else
 				{
@@ -2143,8 +2259,8 @@ int genPcode(int f,int op1,double op2)
 }
 int searchident(char target[],int type)
 {
+	//1全常2全变3局常4局变
 	int i = 0;
-	printf("*************************** %s\n",target);
 	switch(type)
 	{
 		case 1://查函数
@@ -2180,3 +2296,24 @@ int searchident(char target[],int type)
 	return -1;
 }
 /*需要一个新函数在运行栈里找。。。*/
+int judgeType(int i)
+{
+	if(globalTab[i].obj==1)
+	{
+		return 1;
+	}
+	else if(globalTab[i].obj==2)
+	{
+		if(globalTab[i].normal==1)
+		{
+			printf("this is a global varia\n");
+			return 2;
+
+		}
+		else if(globalTab[i].normal==2)
+		{
+			printf("this is a local varia\n");
+			return 3;
+		}
+	}
+}
