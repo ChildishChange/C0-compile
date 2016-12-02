@@ -2146,7 +2146,7 @@ int factor()
 					}
 					else if(rType==3)
 					{
-						genPcode(LIT,1,result);
+						genPcode(LIT,1,result-functT[functTAddr].begin);
 						genPcode(OPR,0,2);
 						genPcode(LOAD,2,0);
 					}
@@ -2666,8 +2666,8 @@ void interpret()
 						break;
 					case 2://局部
 						t++;
-						s[t]=s[(int)s[t-1]];
-						fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t-1],s[(int)s[t-1]],t,s[t]);
+						s[t]=s[base[base_i-1]+2+(int)s[t-1]];
+						fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",base[base_i-1]+2+(int)s[t-1],s[base[base_i-1]+2+(int)s[t-1]],t,s[t]);
 						break;
 				}
 
@@ -2684,8 +2684,8 @@ void interpret()
 						break;
 					case 2://局部
 
-						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
-                        fprintf(OUT,"STOR LOCAL:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+						s[base[base_i-1]+2+(int)s[t-1]] = s[t];
+                        fprintf(OUT,"STOR LOCAL:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)s[t-1],s[base[base_i-1]+2+(int)s[t-1]]);
 						break;
 				}
 				t--;
