@@ -2409,12 +2409,14 @@ void interpret()
 						break;
 					case 2://全局变量
 						t++;
-						s[t] = s[(int)globalTab[(int)CodeList[p].opr2].adr];
+						s[t] = s[(int)CodeList[p].opr2];
+						printf("LOD:lod global s[%d]:%f into s[%d],and its value is %f\n",(int)CodeList[p].opr2,s[(int)CodeList[p].opr2],t,s[t]);
+
 						break;
 					case 3://局部
 						t++;
 						s[t] = s[base[base_i-1]+2+(int)CodeList[p].opr2];
-						printf("LOD:lod s[%d]:%f into s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2],t,s[t]);
+						printf("LOD:lod loacal s[%d]:%f into s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2],t,s[t]);
 						break;
 				}
 				break;
@@ -2426,7 +2428,7 @@ void interpret()
 				switch(CodeList[p].opr1)
 				{
 					case 1://全局
-						//s[];
+						s[(int)CodeList[p].opr2] =s[t] ;
 						break;
 					case 2://局部
 						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
@@ -2602,9 +2604,8 @@ void interpret()
 						printf("LOAD:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t-1],s[(int)s[t-1]],t,s[t]);
 						break;
 					case 2://局部
+						t++;
 
-						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
-                        printf("STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 
