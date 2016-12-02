@@ -193,8 +193,9 @@ int main()
 	{
         fprintf(OUT,"%d\t%s\t%d\t%f\n",i,cd[CodeList[i].funct-1],CodeList[i].opr1,CodeList[i].opr2);
 	}
-    fclose(OUT);
-	interpret();
+	for(i = 0;i<constarrayindex;i++)
+        printf("%d:%s\n",i,constarray[i].s);
+	interpret();fclose(OUT);
 	return 0;
 }
 
@@ -708,11 +709,13 @@ int variadec()
 							globalTab[globalTabAddr-1].ref = T;
 							if(g_or_l==1)
 							{
+								globalTab[globalTabAddr-1].normal = 1;
 								globalTab[globalTabAddr-1].adr = 3+globalTabAddr-1;
 								//3是DL——RA——等等乱七八糟
 							}
 							else
 							{
+								globalTab[globalTabAddr-1].normal = 2;
 								globalTab[globalTabAddr-1].adr = globalTabAddr-1-functT[functTAddr].begin;
 							}
 							T++;//压栈
@@ -1599,9 +1602,12 @@ int whilestatement()
 //完成
 int forstatement()//错误处理
 {
+	int i;
 	int rType;
 	int backset1;
 	int backset2;
+	struct Pcode tmp[10];
+	int tmp_index = 0;
 	char name[100];
 	char name1[100];
 	char name2[100];
@@ -1626,10 +1632,12 @@ int forstatement()//错误处理
 		else if(rType==2)
 		{
 			genPcode(STO,1,globalTab[result].adr);
+
 		}
 		else if(rType==3)
 		{
 			genPcode(STO,2,globalTab[result].adr);
+
 		}
 
 	}
@@ -1642,12 +1650,13 @@ int forstatement()//错误处理
     condition();
 	genPcode(JPC,0,0);
 	backset2 = C_INDEX-1;
+
     sym = getsym();//标识符
 	strncpy(name1,token,100);
 
     sym = getsym();//=
-    sym = getsym();//标识符
 
+	sym = getsym();//标识符
 	result = searchident(token,2);
 	if(result!=-1)
 	{
@@ -1660,15 +1669,27 @@ int forstatement()//错误处理
 		rType = judgeType(result);
 		if(rType==1)
 		{
-			genPcode(LOD,1,result);
+		//	genPcode(LOD,1,result);
+			tmp[tmp_index].funct = LOD;
+			tmp[tmp_index].opr1 = 1;
+			tmp[tmp_index].opr2 = result;
+			tmp_index++;
 		}
 		else if(rType==2)
 		{
-			genPcode(LOD,2,globalTab[result].adr);
+		//	genPcode(LOD,2,globalTab[result].adr);
+			tmp[tmp_index].funct = LOD;
+			tmp[tmp_index].opr1 = 2;
+			tmp[tmp_index].opr2 = globalTab[result].adr;
+			tmp_index++;
 		}
 		else if(rType==3)
 		{
-			genPcode(LOD,3,globalTab[result].adr);
+		//	genPcode(LOD,3,globalTab[result].adr);
+			tmp[tmp_index].funct = LOD;
+			tmp[tmp_index].opr1 = 3;
+			tmp[tmp_index].opr2 = globalTab[result].adr;
+			tmp_index++;
 		}
 	}
 	else
@@ -1679,14 +1700,29 @@ int forstatement()//错误处理
     sym = getsym();//+-
 	strncmp(name2,token,100);
     sym = getsym();//integersym
-	genPcode(LIT,0,integer);
+
+	//genPcode(LIT,0,integer);
+	tmp[tmp_index].funct = LIT;
+	tmp[tmp_index].opr1 = 0;
+	tmp[tmp_index].opr2 = integer;
+	tmp_index++;
+
+
 	if(name2[0]==minus)
 	{
-		genPcode(OPR,0,3);
+		//genPcode(OPR,0,3);
+		tmp[tmp_index].funct = OPR;
+		tmp[tmp_index].opr1 = 0;
+		tmp[tmp_index].opr2 = 3;
+		tmp_index++;
 	}
 	else
 	{
-		genPcode(OPR,0,2);
+	//	genPcode(OPR,0,2);
+		tmp[tmp_index].funct = OPR;
+		tmp[tmp_index].opr1 = 0;
+		tmp[tmp_index].opr2 = 2;
+		tmp_index++;
 	}
 	result1 = searchident(name1,2);
 	if(result1!=-1)
@@ -1705,20 +1741,34 @@ int forstatement()//错误处理
 		}
 		else if(rType==2)
 		{
-			genPcode(STO,1,globalTab[result].adr);
+		//	genPcode(STO,1,globalTab[result].adr);
+			tmp[tmp_index].funct = STO;
+			tmp[tmp_index].opr1 = 1;
+			tmp[tmp_index].opr2 = globalTab[result].adr;
+			tmp_index++;
 		}
 		else if(rType==3)
 		{
-			genPcode(STO,2,globalTab[result].adr);
+		//	genPcode(STO,2,globalTab[result].adr);
+			tmp[tmp_index].funct = STO;
+			tmp[tmp_index].opr1 = 2;
+			tmp[tmp_index].opr2 = globalTab[result].adr;
+			tmp_index++;
 		}
 	}
 	else
 	{
 		printf("**** using undefined variable ****\n");
 	}
+
     sym = getsym();//rparent
     sym = getsym();
     statement();
+	//此处插入指令
+	for(i = 0;i<tmp_index;i++)
+	{
+		genPcode(tmp[i].funct,tmp[i].opr1,tmp[i].opr2);
+	}
 	genPcode(JMP,0,backset1);
 	CodeList[backset2].opr2 = C_INDEX;
     printf("out for\n");
@@ -1793,7 +1843,7 @@ int printfstatement()//理论上printf也能写完了
         {
             printf("%s\n",token);
 
-			strncmp(constarray[constarrayindex].s,token,100);
+			strncpy(constarray[constarrayindex].s,token,100);
 			genPcode(WRT,2,constarrayindex);
 			constarrayindex++;
 
@@ -2116,6 +2166,7 @@ int factor()
 				if(result!=-1)
 				{
 					rType = judgeType(result);
+					printf("rType:%d\n",rType);
 					if(rType==1)
 					{
 						genPcode(LOD,1,result);
@@ -2309,6 +2360,7 @@ int genPcode(int f,int op1,double op2)
 	CodeList[C_INDEX].funct = f;
 	CodeList[C_INDEX].opr1 = op1;
 	CodeList[C_INDEX].opr2 = op2;
+	printf("gen : %s\t%d\t%f\n",cd[f-1],op1,op2);
 	C_INDEX++;
 	if(C_INDEX>=CODEMAX)
 	{
@@ -2397,7 +2449,7 @@ void interpret()
 	do
 	{
 
-        printf("%d\t%s\t%d\t%f\n",p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
+        fprintf(OUT,"%d\t%s\t%d\t%f\n",p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
 		switch(CodeList[p].funct)
 		{
 			case LOD:
@@ -2410,13 +2462,13 @@ void interpret()
 					case 2://全局变量
 						t++;
 						s[t] = s[(int)CodeList[p].opr2];
-						printf("LOD:lod global s[%d]:%f into s[%d],and its value is %f\n",(int)CodeList[p].opr2,s[(int)CodeList[p].opr2],t,s[t]);
+						fprintf(OUT,"LOD:lod global s[%d]:%f into s[%d],and its value is %f\n",(int)CodeList[p].opr2,s[(int)CodeList[p].opr2],t,s[t]);
 
 						break;
 					case 3://局部
 						t++;
 						s[t] = s[base[base_i-1]+2+(int)CodeList[p].opr2];
-						printf("LOD:lod loacal s[%d]:%f into s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2],t,s[t]);
+						fprintf(OUT,"LOD:lod loacal s[%d]:%f into s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2],t,s[t]);
 						break;
 				}
 				break;
@@ -2432,7 +2484,7 @@ void interpret()
 						break;
 					case 2://局部
 						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
-                        printf("STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        fprintf(OUT,"STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 				t--;
@@ -2461,9 +2513,9 @@ void interpret()
 								p = s[base[base_i-1]+2];
 								break;
 							case 1://zhedoushixieshenmeluanqibazaode
-								printf("s[t]:%f\n",s[t]);
+								fprintf(OUT,"s[t]:%f\n",s[t]);
 								s[base[base_i-1]]=s[t];
-								printf("OPR:store s[%d]:%f into s[%d],and it now is %f\n",t,s[t],base[base_i-1],s[base[base_i-1]]);
+								fprintf(OUT,"OPR:store s[%d]:%f into s[%d],and it now is %f\n",t,s[t],base[base_i-1],s[base[base_i-1]]);
 								p = s[base[base_i-1]+2];
 								t = base[base_i-1];
 								break;
@@ -2483,7 +2535,7 @@ void interpret()
 						break;
 					case 4:
 						t--;
-						printf("s[t]:%f,s[t+1]:%f\n",s[t],s[t+1]);
+						fprintf(OUT,"s[t]:%f,s[t+1]:%f\n",s[t],s[t+1]);
 						s[t] = s[t]*s[t+1];
 
 						break;
@@ -2522,7 +2574,7 @@ void interpret()
 				break;
 			case CAL:
 				t++;
-				printf("1:%d\n",t);
+				fprintf(OUT,"1:%d\n",t);
 				base[base_i] = t;
 				base_i++;
 
@@ -2530,16 +2582,16 @@ void interpret()
 				s[t+1] = base_i-1;
 				s[t+2] = p;//调用函数后的下一条指令在指令表中的位置。。
 				t+=2;
-				printf("2:%d\n",t);
+				fprintf(OUT,"2:%d\n",t);
 
 
 				t=t+CodeList[p].opr1;//数据栈腾出相应的值
 				p = (int)CodeList[p].opr2;
-				printf("3:%d\n",t);
+				fprintf(OUT,"3:%d\n",t);
 				break;
 			case PSTR:
 				t++;
-				printf("1:%d\n",t);
+				fprintf(OUT,"1:%d\n",t);
 				base[base_i] = t;
 				base_i++;
 
@@ -2547,12 +2599,12 @@ void interpret()
 				s[t+1] = base_i-1;
 				s[t+2] = -1;//调用函数后的下一条指令在指令表中的位置。。
 				t+=2;
-				printf("2:%d\n",t);
+				fprintf(OUT,"2:%d\n",t);
 
 
 				t=t+CodeList[p].opr1;//数据栈腾出相应的值
 				p = (int)CodeList[p].opr2;
-				printf("3:%d\n",t);
+				fprintf(OUT,"3:%d\n",t);
 				break;
 			case CALP:
 				t++;
@@ -2573,7 +2625,7 @@ void interpret()
 						break;
 					case 2://局部
 						s[base[base_i]+2+(int)CodeList[p].opr2] = s[t];
-						printf("STP :store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i]+2+(int)CodeList[p].opr2,s[base[base_i]+2+(int)CodeList[p].opr2]);
+						fprintf(OUT,"STP :store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i]+2+(int)CodeList[p].opr2,s[base[base_i]+2+(int)CodeList[p].opr2]);
 
 						//printf("stp:%f\n",s[t]);
 						break;
@@ -2595,28 +2647,27 @@ void interpret()
 				switch(CodeList[p].opr1)
 				{
 					case 1://变
-						printf("WRITE:%f\n",s[t]);
+						printf("WRITE STRING:%f\n",s[t]);
 						break;
 					case 2://常
-						printf("WzsRITE:%s",constarray[(int)CodeList[p].opr2].s);
+						printf("WRITE:%s\n",constarray[(int)CodeList[p].opr2].s);
 
 
 						break;
 				}//printf();
-
-
-				break;
+                break;
 			case LOAD:
 				switch(CodeList[p].opr1)
 				{
 					case 1://全局
 						t++;
 						s[t]=s[(int)s[t-1]];
-						printf("LOAD:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t-1],s[(int)s[t-1]],t,s[t]);
+						fprintf(OUT,"LOAD GLOBAL:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t-1],s[(int)s[t-1]],t,s[t]);
 						break;
 					case 2://局部
 						t++;
-
+						s[t]=s[(int)s[t-1]];
+						fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t-1],s[(int)s[t-1]],t,s[t]);
 						break;
 				}
 
@@ -2628,11 +2679,13 @@ void interpret()
 					case 1://全局
 						t--;
 						s[(int)s[t]]=s[t+1];
+						fprintf(OUT,"STOR GLOBAL:store s[%d]:%f into s[%d],and its value is %f\n",t+1,s[t+1],(int)s[t],s[(int)s[t]]);
+
 						break;
 					case 2://局部
 
 						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
-                        printf("STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        fprintf(OUT,"STOR LOCAL:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 				t--;
@@ -2642,11 +2695,11 @@ void interpret()
 				{
 					case 1://全局
 
-						scanf("%f",&s[(int)CodeList[p].opr2]);
+						scanf("SCANF GLOBAL:%f",&s[(int)CodeList[p].opr2]);
 						break;
 					case 2://局部
-						scanf("%f",&s[base[base_i-1]+2+(int)CodeList[p].opr2]);
-                        printf("SCANF:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+						scanf("%lf",&s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 				t--;
