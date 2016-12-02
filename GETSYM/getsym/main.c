@@ -2087,15 +2087,17 @@ int factor()
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
-					genPcode(LIT,0,result);
-					genPcode(OPR,0,2);
 					rType = judgeType(result);
 					if(rType==2)
 					{
+						genPcode(LIT,1,result+3);
+						genPcode(OPR,0,2);
 						genPcode(LOAD,1,0);
 					}
 					else if(rType==3)
 					{
+						genPcode(LIT,1,result);
+						genPcode(OPR,0,2);
 						genPcode(LOAD,2,0);
 					}
 				//	genPcode(LOAD,0,0);//能够在符号表中load下标为栈顶元素的值的值到栈顶
@@ -2592,8 +2594,36 @@ void interpret()
 				printf("WRITE:%f\n",s[t]);
 				break;
 			case LOAD:
+				switch(CodeList[p].opr1)
+				{
+					case 1://全局
+						t++;
+						s[t]=s[(int)s[t-1]];
+						printf("LOAD:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t-1],s[(int)s[t-1]],t,s[t]);
+						break;
+					case 2://局部
+
+						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
+                        printf("STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+						break;
+				}
+
+				break;
 				break;
 			case STOR:
+				switch(CodeList[p].opr1)
+				{
+					case 1://全局
+						t--;
+						s[(int)s[t]]=s[t+1];
+						break;
+					case 2://局部
+
+						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
+                        printf("STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+						break;
+				}
+				t--;
 				break;
             case RED:
 				printf("READ:");
