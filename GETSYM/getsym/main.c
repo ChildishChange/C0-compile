@@ -2592,8 +2592,19 @@ void interpret()
 
 
 			case WRT:
-				//printf();
-				printf("WRITE:%f\n",s[t]);
+				switch(CodeList[p].opr1)
+				{
+					case 1://变
+						printf("WRITE:%f\n",s[t]);
+						break;
+					case 2://常
+						printf("WzsRITE:%s",constarray[(int)CodeList[p].opr2].s);
+
+
+						break;
+				}//printf();
+
+
 				break;
 			case LOAD:
 				switch(CodeList[p].opr1)
@@ -2609,7 +2620,7 @@ void interpret()
 						break;
 				}
 
-				break;
+
 				break;
 			case STOR:
 				switch(CodeList[p].opr1)
@@ -2627,9 +2638,19 @@ void interpret()
 				t--;
 				break;
             case RED:
-				printf("READ:");
-				//scanf();
-                break;
+                switch(CodeList[p].opr1)
+				{
+					case 1://全局
+
+						scanf("%f",&s[(int)CodeList[p].opr2]);
+						break;
+					case 2://局部
+						scanf("%f",&s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        printf("SCANF:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+						break;
+				}
+				t--;
+				break;
 
 		}
 		p++;
