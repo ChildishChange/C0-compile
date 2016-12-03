@@ -22,14 +22,32 @@ int fib(int i)
 }
 void main()
 {
+
 	int i,n;
+	float m;
 	int fib_array[20];
+	i= 20;
+	m = 0.1;
+	m = m+++20;
+	printf(m);
+	m = m-+-20;
+	printf(m);
+	m = m---20;
+	printf(m);
+	m = m-++20;
+	printf(m);
+	m = m--+20;
+	printf(m);
+	m = m*-+20;
+	printf(m);
 	scanf(n);
-	while(n>=20)
+	
+	while(n>=i)
 	{
 		scanf(n);
 			
 	}
+	n = fun(n);
 	for(i=0;i<n;i=i+1)
 	{
 		fib_array[i] = fib(i+1);
@@ -38,9 +56,8 @@ void main()
 	for(i = 0;i<n;i = i+1)
 	{
 		printf("NO.",i);
-		printf("\t");
 		printf(fib_array[i]);
-		printf("\n");
+		
 	}
 	return;
 }

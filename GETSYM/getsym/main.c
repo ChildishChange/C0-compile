@@ -118,7 +118,21 @@ double s[3000];
 int T = 0;
 int index_of_main = -1;
 int funct_index_of_main = -1;
-/*====================================*/
+/*===============´íÎó´¦Àí==================*/
+int error_num = 0;
+struct error_list
+{
+	int kind;
+	int line;
+}
+void jump()
+{
+	while(sym!=semicolon)
+	{
+		sym = getsym();
+	}
+}
+/*=========================================*/
 int main()
 {
     int i ;
@@ -653,9 +667,9 @@ int variadec()
                         if(sym == integersym)
                         {
 							_typ = 5;
-							if(integer==0)
+							if(integer<=0)
 							{
-								printf("**** NOT ZERO ****\n");
+								printf("**** BIGGER THAN ZERO ****\n");
 								return;
 							}
                             printf(" and its size is %d\n",integer);
