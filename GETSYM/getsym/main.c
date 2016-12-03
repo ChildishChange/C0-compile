@@ -124,6 +124,14 @@ struct error_list
 {
 	int kind;
 	int line;
+}errors[300];
+int error_index = 0;
+void genERR(int k,int l)
+{
+	errors[error_index].kind = k;
+	errors[error_index].line = l;
+	error_index++;
+
 }
 void jump()
 {
@@ -156,7 +164,8 @@ int main()
     }
 
 	genPcode(PSTR,0,0);//一开始，设SL RA
-    sym = getsym();
+
+	sym = getsym();
     if(sym==constsym)
     {
         constdec();
@@ -172,7 +181,7 @@ int main()
 	}
     functT[functTAddr].end = globalTabAddr-1;
 
-	if(index_of_main==-1)
+	if(index_of_main==-1)//没有main函数
 	{
 		return 0;
 	}
@@ -209,33 +218,22 @@ int main()
 	}
 	for(i = 0;i<constarrayindex;i++)
         printf("%d:%s\n",i,constarray[i].s);
-	interpret();fclose(OUT);
+
+	if(error_index==0)
+		interpret();
+	else
+	{
+		printf("HERE ARE YOUR ERRORS:\n");
+		for(i = 0;i<error_index;i++)
+        {
+            printf("NO.%d ERROR AT LINE %d\n",errors[i].kind,errors[i].line);
+        }
+	}
+	fclose(OUT);
 	return 0;
 }
 
-char getch()
-{
-	if(linelength==(curindex+1))//读完一行
-    {
-        while(1)
-        {
-            memset(LineBuffer,0,200);//清空
-			if(feof(IN))
-				return;
-			fgets(LineBuffer,200,IN);//再读一行
-            Line++;
-            if(LineBuffer[0]=='\n')
-                continue;
-            else
-                break;
-        }
-        LineBuffer[strlen(LineBuffer)]='\0';
-        linelength = strlen(LineBuffer);
-        curindex = 0;
-    }
-    Column = curindex;
-    return LineBuffer[curindex++];
-}
+
 
 int getsym()
 {
@@ -243,10 +241,12 @@ int getsym()
     int r_index = -1;//reserved word location
 	int i;
 	memset(token,0,100);//清空token
-	ch = getch();//
+	ch  = fgetc(IN);//
     while(ch=='\n'||ch=='\t'||ch==' ')//去除单词之间的空字符
     {
-        ch = getch();
+		if(ch=='\n')
+			Line++;
+        ch  = fgetc(IN);
     }
     if(feof(IN))
     {
@@ -258,14 +258,14 @@ int getsym()
     {
         token[sym_index++] = ch;
         token[sym_index] = '\0';
-        ch = getch();
+        ch  = fgetc(IN);
 		while(isalnum(ch)||ch=='_')
         {
             token[sym_index++] = ch;
             token[sym_index] = '\0';
-            ch = getch();
+            ch  = fgetc(IN);
         }
-        curindex--;
+        fseek(IN,-1L,SEEK_CUR);
         for(i = 0;i<RNUM;i++)
         {
             if(strcmp(token,rWord[i])==0)
@@ -284,23 +284,23 @@ int getsym()
     {
         token[sym_index++] = ch;
         token[sym_index] = '\0';
-        ch = getch();
+        ch  = fgetc(IN);
 		while(isdigit(ch))
         {
             token[sym_index++] = ch;
             token[sym_index] = '\0';
-            ch = getch();
+            ch  = fgetc(IN);
         }
         if(ch=='.')
         {
             token[sym_index++] = ch;
             token[sym_index] = '\0';
-            ch = getch();
+            ch  = fgetc(IN);
             while(isdigit(ch))
             {
                 token[sym_index++] = ch;
                 token[sym_index] = '\0';
-                ch =getch();
+                ch  = fgetc(IN);
             }
             if(!isdigit(token[sym_index-1]))
             {
@@ -308,12 +308,12 @@ int getsym()
                 token[sym_index] = '\0';
             }
             floatnum = atof(token);
-            curindex--;
+            fseek(IN,-1L,SEEK_CUR);
             return real;
         }
         else
         {
-            curindex--;
+            fseek(IN,-1L,SEEK_CUR);
             integer = atoi(token);
             return integersym;
 		}
@@ -323,12 +323,12 @@ int getsym()
         switch (ch)
         {
 			case '"':
-				ch = getch();
+				ch  = fgetc(IN);
                 while(ch==32||ch==33||(ch>=35&&ch<=126))
 				{
 					token[sym_index++] = ch;
 					token[sym_index] = '\0';
-					ch = getch();
+					ch  = fgetc(IN);
 				}
 				if(ch=='"')
 				{
@@ -339,12 +339,12 @@ int getsym()
 					return -1;//以后要设置新的错误号
 				}
 			case '\'':
-				ch = getch();
+				ch  = fgetc(IN);
 				if(isalnum(ch)||ch=='+'||ch=='-'||ch=='*'||ch=='/')
 				{
 					token[sym_index++] = ch;
 					token[sym_index] = '\0';
-					ch = getch();
+					ch  = fgetc(IN);
 				}
 				if(ch=='\'')
 				{
@@ -398,7 +398,7 @@ int getsym()
             case '!':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-				ch = getch();
+				ch  = fgetc(IN);
 				if(ch=='=')
 				{
                     token[sym_index++] = ch;
@@ -407,13 +407,13 @@ int getsym()
 				}
 				else
 				{
-					curindex--;
+					fseek(IN,-1L,SEEK_CUR);
 					return -1;
 				}
             case '=':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-                ch = getch();
+                ch  = fgetc(IN);
 				if(ch=='=')
 				{
 				    token[sym_index++] = ch;
@@ -422,13 +422,13 @@ int getsym()
 				}
 				else
                 {
-                    curindex--;
+                    fseek(IN,-1L,SEEK_CUR);
 					return becomes;
                 }
             case '<':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-				ch = getch();
+				ch  = fgetc(IN);
 				if(ch=='=')
 				{
 				    token[sym_index++] = ch;
@@ -437,14 +437,14 @@ int getsym()
 				}
 				else
                 {
-                    curindex--;
+                    fseek(IN,-1L,SEEK_CUR);
                     return lessthan;
                 }
 
             case '>':
 				token[sym_index++] = ch;
                 token[sym_index] = '\0';
-				ch = getch();
+				ch  = fgetc(IN);
 				if(ch=='=')
 				{
 				    token[sym_index++] = ch;
@@ -453,7 +453,7 @@ int getsym()
 				}
 				else
                 {
-                   curindex--;
+                   fseek(IN,-1L,SEEK_CUR);
                     return greathan;
                 }
 
@@ -487,6 +487,7 @@ int constdec()
 					if(sym!=becomes)
 					{
 						printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
+						genERR(5,Line);
 						return;
 					}
 					else
@@ -504,13 +505,12 @@ int constdec()
 							_value = integer*sign;
 							if(searchinSTab(1,_name)==-1)
 							{
-
-
 								addSTab(_obj,_typ,_name,_value);
 							}
 							else
 							{
 								printf("**** MULTII-DECLARATION! ****\n");
+								genERR(6,Line);
 								return;
 							}
 							sign = 1;
@@ -518,12 +518,14 @@ int constdec()
 							if(sym != comma && sym != semicolon)
 							{
 								printf("**** A COMMA OR A SEMICOLON ****\n");
+								genERR(11,Line);
 								return;
 							}
 						}
 						else
 						{
 							printf("**** ERROR IN CONSTANT DECLARATION! ****\n");
+							genERR(7,Line);
 							return;
 						}
 					}
@@ -540,6 +542,7 @@ int constdec()
 					if(sym!=becomes)
 					{
 						printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
+						genERR(5,Line);
 						return;
 					}
                     else
@@ -571,18 +574,21 @@ int constdec()
 							else
 							{
 								printf("**** multi defined in float const ****\n");
+								genERR(6,Line);
 							}
 							sign = 1;
                             sym = getsym();
                             if(sym != comma && sym != semicolon)
 							{
 								printf("**** A COMMA OR A SEMICOLON ****\n");
+								genERR(11,Line);
 								return;
 							}
 						}
 						else
 						{
 							printf("**** ERROR IN CONSTANT DECLARATION! ****\n");
+							genERR(7,Line);
 							return;
 						}
                     }
@@ -599,6 +605,7 @@ int constdec()
                     if(sym!=becomes)
 					{
 						printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
+						genERR(5,Line);
 						return;
 					}
                     else
@@ -620,11 +627,13 @@ int constdec()
 							else
 							{
 								printf("**** multi defined in char const ****\n");
+								genERR(6,Line);
 							}
 							sym = getsym();
                             if(sym != comma && sym != semicolon)
 							{
 								printf("**** A COMMA OR A SEMICOLON ****\n");
+								genERR(11,Line);
 								return;
 							}
                         }
@@ -634,6 +643,7 @@ int constdec()
                 break;
             default:
                 printf("**** WHAT IS THIS IN CONSTANT DECLARATION? ****\n");
+				genERR(7,Line);
 				return;
         }
     }
@@ -670,6 +680,7 @@ int variadec()
 							if(integer<=0)
 							{
 								printf("**** BIGGER THAN ZERO ****\n");
+								genERR(8,Line);
 								return;
 							}
                             printf(" and its size is %d\n",integer);
@@ -698,6 +709,7 @@ int variadec()
 							else
 							{
 								printf("**** multi defined in varia ****\n");
+								genERR(6,Line);
 							}
                             sym = getsym();
                             if(sym==rbracket)
@@ -707,11 +719,13 @@ int variadec()
                             else
                             {
 								printf("**** NEED RBRACKET HERE ****\n");//err
+								genERR(3,Line);
 							}
                         }
                         else
                         {
 							printf("**** ONLY INTEGER HERE ****\n");//ERROR
+							genERR(9,Line);
 						}
                     }
                     else if(sym ==comma)//变量
@@ -737,6 +751,7 @@ int variadec()
 						else
 						{
 							printf("**** multi defined in varia ****\n");
+							genERR(6,Line);
 						}
                     }
                     else if(sym == semicolon)//变量
@@ -762,6 +777,7 @@ int variadec()
 						else
 						{
 							printf("**** multi defined in varia ****\n");
+							genERR(6,Line);
 						}
 						break;
                     }
@@ -774,6 +790,7 @@ int variadec()
                     else
                     {
 						printf("**** WHAT ? ****\n");//报错
+						genERR(10,Line);
 						return;
 					}
 
@@ -800,6 +817,7 @@ int variadec()
 							if(integer==0)
 							{
 								printf("**** BIGGER THAN ZERO ****\n");
+								genERR(8,Line);
 								return;
 							}
 							arrayT[arrayTAddr].elementType = 2;
@@ -827,6 +845,7 @@ int variadec()
 							else
 							{
 								printf("**** multi defined in varia ****\n");
+								genERR(6,Line);
 							}
 
                             sym = getsym();
@@ -837,11 +856,13 @@ int variadec()
                             else
                             {
 								printf("**** NEED RBRACKET HERE ****\n");//err
+								genERR(3,Line);
 							}
                         }
                         else
 						{
 							printf("**** ONLY INTEGER HERE ****\n");
+							genERR(9,Line);
 						}
                     }
                     else if(sym ==comma)
@@ -868,6 +889,7 @@ int variadec()
 						else
 						{
 							printf("**** multi defined in varia ****\n");
+							genERR(6,Line);
 						}
                     }
                     else if(sym == semicolon)
@@ -894,6 +916,7 @@ int variadec()
 						else
 						{
 							printf("**** multi defined in varia ****\n");
+							genERR(6,Line);
 						}
 						break;
                     }
@@ -907,6 +930,7 @@ int variadec()
                     else
 					{
 						printf("**** WHAT IS THIS ****");//报错
+						genERR(10,Line);
 					}
 
                 }while(sym == comma);
@@ -930,6 +954,7 @@ int variadec()
 							if(integer==0)
 							{
 								printf("**** BIGGER THAN ZERO ****\n");
+								genERR(8,Line);
 								return;
 							}
 							arrayT[arrayTAddr].elementType = 3;
@@ -957,6 +982,7 @@ int variadec()
 							else
 							{
 								printf("**** multi defined in varia ****\n");
+								genERR(6,Line);
 							}
                             sym = getsym();
                             if(sym==rbracket)
@@ -966,12 +992,14 @@ int variadec()
                             else
                             {
 								printf("**** NEED RBRACKET HERE ****\n");//err
+								genERR(3,Line);
 								return;
 							}
                         }
                         else
 						{
 							printf("**** WHAT IS THIS ****\n");
+							genERR(10,Line);
 						}
                     }
                     else if(sym ==comma)
@@ -998,6 +1026,7 @@ int variadec()
 						else
 						{
 							printf("**** multi defined in varia ****\n");
+							genERR(6,Line);
 						}
                     }
                     else if(sym == semicolon)
@@ -1023,6 +1052,7 @@ int variadec()
 						else
 						{
 							printf("**** multi defined in varia ****\n");
+							genERR(6,Line);
 						}
 						break;
                     }
@@ -1036,6 +1066,7 @@ int variadec()
                     else
                     {
 						printf("**** WHAT IS THIS ****\n");
+						genERR(10,Line);
 					}
 
                 }while(sym == comma);
@@ -1079,6 +1110,7 @@ int functwith(int kind,char name[])//已经预读左括号
 			if(strcmp(name,"main")==0)
 			{
 				printf("1059,main return void!\n");
+				genERR(12,Line);
 			}
 			functT[functTAddr+1].startindex = C_INDEX;
 			printf("C_INDEX:%d\n",C_INDEX);
@@ -1090,14 +1122,17 @@ int functwith(int kind,char name[])//已经预读左括号
 		else
 		{
 			printf("**** multi defined in funct ****\n");
+			genERR(6,Line);
 			return;
 		}
 		paralist();
 
         sym = getsym();//读大括号
         if(sym!=lbrace)
-            printf("**** there should be a brace! ****\n");
-
+		{
+			printf("**** there should be a brace! ****\n");
+			genERR(4,Line);
+		}
 		compoundstatement();
 
 
@@ -1116,7 +1151,14 @@ int functwith(int kind,char name[])//已经预读左括号
         functwithout(name);
 	else
 	{
-		printf("**** INTERESTING ****\n");//报错
+		if(sym<=0)
+			;
+		else
+		{
+			printf("**** INTERESTING ****\n");//报错
+			genERR(7,Line);
+		}
+
 	}
 
 }
@@ -1148,6 +1190,7 @@ int functwithout(char name[])
 		else
 		{
 			printf("**** multi defined in funct ****\n");
+			genERR(6,Line);
 			return;
 		}
 
@@ -1155,6 +1198,7 @@ int functwithout(char name[])
         sym = getsym();
         if(sym!=lbrace)
 		{   printf("there should be a brace!");
+			genERR(4,Line);
 			return ;
 		}
 		compoundstatement();
@@ -1190,8 +1234,11 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
             sym = getsym();
             //反正要做一些操作
             if(sym!=identsym)
-                printf("can't use reserved word as identifier\n");//
-            else
+            {
+				printf("can't use reserved word as identifier\n");//
+				genERR(13,Line);
+			}
+			else
             {
 				printf(" and named %s\n",token);
 				strcpy(_name,token);
@@ -1220,17 +1267,22 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
 			else
 			{
 				printf("**** already defined ****\n");
+				genERR(6,Line);
 			}
             if(sym!=comma&&sym!=rparent)
             {
                 printf("there should be a comma or a right parent!\n");//报错
+				genERR(11,Line);
             }
 
         }
         else if(sym==rparent)
             printf("it does not have a parameter!\n");
         else
-            printf("undefined type!\n");//报错
+		{
+			printf("undefined type!\n");//报错
+			genERR(7,Line);
+		}
     }while(sym!=rparent);//当读入其他符号是要报错的。。
 }
 
@@ -1250,13 +1302,17 @@ int valuelist(int result)//有预读,
 	else if(sym == rparent)
 	{
 		if(i<functT[result].paranum)
+		{
 			printf("errpr1234\n");
+			genERR(14,Line);
+		}
 		printf("out val list\n");
 		return;
 	}
 	else
 	{
 		printf("**** WHAT IS THIS IN VALUE LIST ****\n");
+		genERR(7,Line);
 		return;
 	}
 
@@ -1269,6 +1325,7 @@ int valuelist(int result)//有预读,
 		if(i>functT[result].paranum)
 		{
 			printf("**** SO MANY PARAMETERS ****\n");
+			genERR(15,Line);
 			return;
 		}
 	}
@@ -1322,6 +1379,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             if(sym!=semicolon)
 			{
 				printf("**** there should be semicolon ****\n");
+				genERR(1,Line);
 			}
             sym = getsym();//下一个成分的开头
             break;
@@ -1331,6 +1389,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 			if(sym!=semicolon)
             {
 				printf("**** there should be semicolon ****\n");
+				genERR(1,Line);
             }
 			sym = getsym();//下一句话的
             break;
@@ -1343,6 +1402,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				if(globalTab[functT[functTAddr].begin].typ!=4)
 				{
 					printf("**** 1299 返回值有误！ ****\n");
+					genERR(16,Line);
 				}
 				genPcode(OPR,0,0);
 				printf("return nothing\n");
@@ -1354,6 +1414,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				if(globalTab[functT[functTAddr].begin].typ==4)
 				{
 					printf("**** 1310 返回值有误！ ****\n");
+					genERR(17,Line);
 				}
                 sym = getsym();
 
@@ -1361,18 +1422,23 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				if(sym != rparent)
 				{
 					printf("**** there should be right par after return ****\n");
+					genERR(2,Line);
 				}
 				sym = getsym();//;
 				if(sym!=semicolon)
 				{
 					printf("**** there should be a semicolon after return ****\n");
+					genERR(1,Line);
 				}
 				genPcode(OPR,1,0);
                 sym = getsym();//读下一个
 				printf("out return\n");
             }
             else
-                printf("**** need parenthese ****\n");//baocuo
+            {
+				printf("**** need parenthese ****\n");//baocuo
+				genERR(2,Line);
+			}
             break;
 		case ifsym:
             ifcondition();//
@@ -1396,6 +1462,11 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				sym = getsym();
 				expression();
 				//genPcode(INT,0,1);
+				if(sym!=rbracket)
+				{
+					genERR(3,Line);
+
+				}
 				result = searchident(name,2);
 				if(result!=-1)
 				{
@@ -1406,6 +1477,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				else
 				{
 					printf("1350 NOT FOUND!\n");
+					genERR(18,Line);
 					return;
 				}
 
@@ -1430,6 +1502,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				else
 				{
 					printf("**** NEED = HERE ****\n");
+					genERR(19,Line);
 					return;
 				}
                 break;
@@ -1445,6 +1518,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				else
 				{
 					printf("**** NO SUCH FUNCTION ****\n");
+					genERR(18,Line);
 					return;
 				}
                 sym =getsym();
@@ -1452,6 +1526,11 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
                 printf("calling a function\n");
                 valuelist(result);//
 				sym = getsym();//;
+				if(sym!=semicolon)
+				{
+					printf("**** there should be semicolon ****\n");
+					genERR(1,Line);
+				}
                 sym = getsym();
 
             }
@@ -1466,6 +1545,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 					if(rType==1)
 					{
 						printf("**** YOU CAN'T RE VALUATE A CONSTANT ****\n");
+						genERR(20,Line);
 						return;
 					}
 					else if(rType==2)
@@ -1477,30 +1557,24 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 						genPcode(STO,2,globalTab[result].adr);
 					}
 
-					/*if(globalTab[result].obj == 1)
-					{
 
-						printf("**** YOU CAN'T RE VALUATE A CONSTANT ****\n");
-						return;
-					}
-					else
-					{
-						genPcode(STO,1,globalTab[result].adr);
-					}*/
 				}
 				else if(result==-1)
 				{
 					printf("**** undefined!!!! ****\n");
+					genERR(18,Line);
 				}
 			   sym = getsym();
             }
             else
             {
 				printf("**** WHAT ARE YOU GOING TO DO WITH IT ****\n");//ERROR
+				genERR(7,Line);
 			}
             break;
 		default :
             printf("****in statement : what the fuck is this \"%s\" ****\n",token);
+			genERR(7,Line);
             //sym = getsym();会有bug
 			break;
     }
@@ -1517,6 +1591,7 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
     if(sym!=lparent)//这里的错误处理可能有点难
     {
         printf("there should be a left parenthese\n");
+		genERR(2,Line);
        // expression();
     }
     condition();//预读一个括号
@@ -1525,8 +1600,10 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
 	backset1 = C_INDEX-1;
 
 	if(sym!=rparent)//这里发现了第一个问题
-        printf("**** wrong symbol in condition! ****\n");//
-
+    {
+		genERR(2,Line);
+		printf("**** wrong symbol in condition! ****\n");//
+	}
 	sym = getsym();
     statement();//在跳出expression之前yuduyige xiaokuohao
 
@@ -1563,9 +1640,8 @@ int condition()//进入前没有预读
 	//	genPcode(INT,0,1);
 		printf("this is a %s\n",_symbol[sym]);
 		sym = getsym();
- //   printf("%d\n",integer);
+
 		expression();//可能读到关系符号然后再跟一个表达式，也可能是
-		//这里也要错误处理
 		genPcode(OPR,0,symtmp);//
 		printf("out condition\n");
 
@@ -1581,6 +1657,7 @@ int condition()//进入前没有预读
 	else
 	{
 		printf("**** wrong symbol in condition! ****\n");//
+		genERR(7,Line);
 	}
 
 
@@ -1609,7 +1686,7 @@ int whilestatement()
 	}
 	else
 	{
-		;
+		genERR(21,Line);
 	}
     printf("out while\n");
 }
@@ -1629,9 +1706,17 @@ int forstatement()//错误处理
 	int result1;
 	printf("enter for\n");
     sym = getsym();//(
+	if(sym!=lparent)
+	{
+		genERR(2,Line);
+	}
 	sym = getsym();//标识符
 	strncpy(name,token,100);
     sym = getsym();//=
+	if(sym!=becomes)
+	{
+		genERR(19,Line);
+	}
     sym = getsym();
     expression();
 	result = searchident(name,2);
@@ -1641,6 +1726,7 @@ int forstatement()//错误处理
 		if(rType==1)
 		{
 			printf("1583\n");
+			genERR(20,Line);
 			return;
 		}
 		else if(rType==2)
@@ -1658,6 +1744,7 @@ int forstatement()//错误处理
 	else
 	{
 		printf("1598 cant find\n");
+		genERR(18,Line);
 	}
 
 	backset1 = C_INDEX;
@@ -1669,17 +1756,15 @@ int forstatement()//错误处理
 	strncpy(name1,token,100);
 
     sym = getsym();//=
-
+	if(sym!=becomes)
+	{
+		genERR(19,Line);
+	}
 	sym = getsym();//标识符
 	result = searchident(token,2);
 	if(result!=-1)
 	{
-	/*	if(globalTab[result].obj == 1)
-			genPcode(LOD,2,result);
-		else
-		{
-			genPcode(LOD,1,globalTab[result].adr);
-		}*/
+
 		rType = judgeType(result);
 		if(rType==1)
 		{
@@ -1709,10 +1794,11 @@ int forstatement()//错误处理
 	else
 	{
 		printf("1636**** using undefined variable ****\n");
+		genERR(18,Line);
 	}
 
     sym = getsym();//+-
-	strncmp(name2,token,100);
+	strncpy(name2,token,100);
     sym = getsym();//integersym
 
 	//genPcode(LIT,0,integer);
@@ -1722,7 +1808,7 @@ int forstatement()//错误处理
 	tmp_index++;
 
 
-	if(name2[0]==minus)
+	if(name2[0]=='-')
 	{
 		//genPcode(OPR,0,3);
 		tmp[tmp_index].funct = OPR;
@@ -1730,7 +1816,7 @@ int forstatement()//错误处理
 		tmp[tmp_index].opr2 = 3;
 		tmp_index++;
 	}
-	else
+	else if(name2[0]=='+')
 	{
 	//	genPcode(OPR,0,2);
 		tmp[tmp_index].funct = OPR;
@@ -1738,19 +1824,20 @@ int forstatement()//错误处理
 		tmp[tmp_index].opr2 = 2;
 		tmp_index++;
 	}
+	else
+	{
+		printf("asdasdsadsdsadasdsadsadsad\n");
+		genERR(7,Line);
+	}
 	result1 = searchident(name1,2);
 	if(result1!=-1)
 	{
-		/*if(globalTab[result].obj == 1)
-			printf("**** can't revaluate const ****\n");
-		else
-		{
-			genPcode(STO,1,globalTab[result].adr);
-		}*/
+
 		rType = judgeType(result1);
 		if(rType==1)
 		{
 			printf("1663**** can't revaluate const ****\n");
+			genERR(20,Line);
 			return;
 		}
 		else if(rType==2)
@@ -1773,9 +1860,14 @@ int forstatement()//错误处理
 	else
 	{
 		printf("**** using undefined variable ****\n");
+		genERR(18,Line);
 	}
 
     sym = getsym();//rparent
+	if(sym!=rparent)
+	{
+		genERR(2,Line);
+	}
     sym = getsym();
     statement();
 	//此处插入指令
@@ -1812,6 +1904,7 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 					if(rType==1)
 					{
 						printf("1710\n");
+						genERR(20,Line);
 						return;
 					}
 					else if(rType==2)
@@ -1831,16 +1924,21 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
             else
             {
                 printf("**** there should be some parameter! ****\n");
+				genERR(22,Line);
             }
 
         }
         while(sym==comma);//读到右括号就读完了，跳出了
         if(sym!=rparent)
-            printf("**** where is the right parenthese of scanf?/there should be comma to split the parameters ****\n");//如果没写分号怎么办。。。
-    }
+		{
+			printf("**** where is the right parenthese of scanf?/there should be comma to split the parameters ****\n");//如果没写分号怎么办。。。
+			genERR(2,Line);
+		}
+	}
     else
     {
         printf("**** where is the left parenthese of scan? ****\n");
+		genERR(2,Line);
     }
     printf("\nout scanf\n");
 }
@@ -1876,6 +1974,7 @@ int printfstatement()//理论上printf也能写完了
             else
             {
 				printf("**** wrong in print~ ****\n");//报错
+				genERR(7,Line);
 			}
         }
         else
@@ -1885,8 +1984,10 @@ int printfstatement()//理论上printf也能写完了
 		}
 	}
     else//没有左括号
-        printf("**** where is the left parenthese of print? ****\n");
-
+    {
+		printf("**** where is the left parenthese of print? ****\n");
+		genERR(2,Line);
+	}
     printf("out print\n");
 
 }
@@ -1983,8 +2084,10 @@ int factor()
 					genPcode(LIT,2,floatnum*i);
                 }
 				else
+				{
 					printf("**** error in factor! ****\n");
-
+					genERR(7,Line);
+				}
 				sym = getsym();
 				break;
 
@@ -2004,8 +2107,10 @@ int factor()
 					genPcode(LIT,2,floatnum*i);
 				}
 				else
+				{
 					printf("**** error in factor! ****\n");
-
+					genERR(7,Line);
+				}
 				sym = getsym();
 				break;
             }
@@ -2027,6 +2132,7 @@ int factor()
 			else
 			{
 				printf("**** wrong in factor minus ****\n");
+				genERR(7,Line);
 			}
             break;
         case add:
@@ -2047,8 +2153,10 @@ int factor()
 					genPcode(LIT,2,floatnum*i);
 				}
 				else
+				{
 					printf("**** error in factor! ****\n");
-
+					genERR(7,Line);
+				}
 				sym = getsym();
 				break;
 
@@ -2068,8 +2176,10 @@ int factor()
 					genPcode(LIT,0,floatnum*i);
 				}
 				else
+				{
 					printf("**** error in factor! ****\n");
-
+					genERR(7,Line);
+				}
 				sym = getsym();
 				break;
             }
@@ -2091,6 +2201,7 @@ int factor()
 			else
 			{
 				printf("**** wrong in factor minus ****\n");
+				genERR(7,Line);
 			}
 
             break;
@@ -2099,8 +2210,10 @@ int factor()
             sym = getsym();
             expression();
 			if(sym != rparent)
-                printf("**** wrong in factor l e l ****\n");
-
+			{
+				printf("**** wrong in factor l e l ****\n");
+				genERR(2,Line);
+			}
 			sym = getsym();
 			break;
 
@@ -2136,6 +2249,7 @@ int factor()
 				if(sym!=rparent)
 				{
 					printf("**** function call lost its right parenthese ****\n");
+					genERR(2,Line);
 				}//错误处理
 				sym = getsym();
 				break;
@@ -2167,7 +2281,10 @@ int factor()
 				//	genPcode(LOAD,0,0);//能够在符号表中load下标为栈顶元素的值的值到栈顶
 				}
 				else
-				{printf("**** using undefined array ****\n");}
+				{
+					printf("**** using undefined array ****\n");
+					genERR(18,Line);
+				}
 
 				sym = getsym();
 				break;
@@ -2193,17 +2310,12 @@ int factor()
 					{
 						genPcode(LOD,3,globalTab[result].adr);
 					}
-				/*	if(globalTab[result].obj == 1)
-						genPcode(LOD,2,result);
-					else
-					{
 
-						genPcode(LOD,1,globalTab[result].adr);
-					}*/
 				}
 				else
 				{
 					printf("**** using undefined variable ****\n");
+					genERR(18,Line);
 				}
 				//读到标识符之前已经预读了，此处不用getsym
 				break;
@@ -2464,6 +2576,11 @@ void interpret()
 	{
 
         fprintf(OUT,"%d\t%s\t%d\t%f\n",p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
+        if(p>C_INDEX)
+        {
+
+            return;
+        }
 		switch(CodeList[p].funct)
 		{
 			case LOD:
