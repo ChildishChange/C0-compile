@@ -1649,10 +1649,19 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 		case rbrace:
 			break;
 		default :
-            printf("****in statement : what the fuck is this \"%s\" ****\n",token);
-			genERR(7,Line);jump(semicolon);sym = getsym();
-			if(feof(IN))
-                printf("asdasdas");
+		    if(feof(IN))
+            {
+                genERR(4,Line);
+                sym = rbrace;
+                return;
+            }
+            else
+            {
+                 printf("****in statement : what the fuck is this \"%s\" ****\n",token);
+                    jump(semicolon);sym = getsym();
+            }
+
+
             //sym = getsym();会有bug
 			break;
     }
