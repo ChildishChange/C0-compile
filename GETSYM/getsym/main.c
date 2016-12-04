@@ -1203,7 +1203,7 @@ int functwith(int kind,char name[])//已经预读左括号
 	else
 	{
 		if(sym<=0)
-			;
+			return;
 		else
 		{
 			printf("**** INTERESTING ****\n");//报错
@@ -1651,6 +1651,8 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 		default :
             printf("****in statement : what the fuck is this \"%s\" ****\n",token);
 			genERR(7,Line);jump(semicolon);sym = getsym();
+			if(feof(IN))
+                printf("asdasdas");
             //sym = getsym();会有bug
 			break;
     }
@@ -2893,7 +2895,7 @@ void interpret()
 					case 2://局部
              //           fprintf(OUT,"s[t]:s[%d]:%f\n",t,s[t]);
 						s[t]=s[base[base_i-1]+2+(int)s[t]];
-						fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]],t,s[t]);
+			//			fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]],t,s[t]);
 						break;
 				}
 
@@ -2915,7 +2917,7 @@ void interpret()
 
 						s[base[base_i-1]+2+(int)s[t]] = s[t+1];
 
-                        fprintf(OUT,"STOR LOCAL:store s[%d]:%f into s[%d],and its value is %f\n",t+1,s[t+1],base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]]);
+                  //      fprintf(OUT,"STOR LOCAL:store s[%d]:%f into s[%d],and its value is %f\n",t+1,s[t+1],base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]]);
 
 						break;
 				}
