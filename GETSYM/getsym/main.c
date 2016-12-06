@@ -1254,7 +1254,7 @@ int functwithout(char name[])
 		}
 		compoundstatement();
 
-
+		genPcode(OPR,0,0);
 
         sym = getsym();//读void
 
@@ -1586,7 +1586,15 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				result = searchident(name,1);
 				if(result!=-1)
 				{
-				    genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
+					if(functT[result].paranum==0)
+						genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
+					//genPcode(CAL,0,functT[globalTab[result].ref].startindex);
+					else
+					{
+						genPcode(CALP,functT[result].end-functT[result].begin,functT[result].startindex);
+
+					}
+				    //genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
 					//genPcode(CAL,0,functT[globalTab[result].ref].startindex);
 				}
 				else
@@ -1599,6 +1607,15 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 
                 printf("calling a function\n");
                 valuelist(result);//
+				if(result!=-1&&functT[result].paranum!=0)
+				{
+					genPcode(JF,0,functT[result].startindex);
+				}
+				if(sym!=rparent)
+				{
+					printf("**** function call lost its right parenthese ****\n");
+					genERR(2,Line);
+				}//错误处理
 				sym = getsym();//;
 				if(sym!=semicolon)
 				{
@@ -2335,6 +2352,12 @@ int factor()
 
 					}
 				}
+				else
+				{
+					printf("**** NO SUCH FUNCTION ****\n");
+					genERR(18,Line);
+
+				}
 				sym = getsym();
 				valuelist(result);
 				if(result!=-1&&functT[result].paranum!=0)
@@ -2674,7 +2697,7 @@ void interpret()
 	do
 	{
 
-       // fprintf(OUT,"t:%d\t%d\t%s\t%d\t%f\n",t,p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
+        fprintf(OUT,"t:%d\t%d\t%s\t%d\t%f\n",t,p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
         if(p>C_INDEX)
         {
 
@@ -2763,7 +2786,7 @@ void interpret()
 					case 2:
 						t--;
 						s[t] = s[t]+s[t+1];
-						fprintf(OUT,"+++++++:%f\n",s[t]);
+						//fprintf(OUT,"+++++++:%f\n",s[t]);
 						break;
 					case 3:
 						t--;
@@ -2773,7 +2796,7 @@ void interpret()
 						t--;
 
 						s[t] = s[t]*s[t+1];
-                        fprintf(OUT,"*******:%f\n",s[t]);
+                       // fprintf(OUT,"*******:%f\n",s[t]);
 						break;
 					case 5:
 						t--;
@@ -2939,10 +2962,11 @@ void interpret()
 					case 1://全局
 					    printf("scanf global:");
 						scanf("%lf",&s[(int)CodeList[p].opr2]);
+
 						break;
 					case 2://局部
 						scanf("%lf",&s[base[base_i-1]+2+(int)CodeList[p].opr2]);
-                 //       fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 				//t--;
