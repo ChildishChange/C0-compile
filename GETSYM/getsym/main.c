@@ -498,15 +498,14 @@ int constdec()
 				do{
 					_typ = 1;
 					sym = getsym();
-					printf("Declare an const integer named : %s",token);
+					//printf("Declare an const integer named : %s",token);
 					strcpy(_name,token);
 					sym = getsym();
 					if(sym!=becomes)
 					{
-						printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
+						//printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
 						genERR(5,Line);
 						jump(semicolon);
-
 						break;
 					}
 					else
@@ -520,7 +519,13 @@ int constdec()
                                     sign*=-1;
                                 sym = getsym();
 							}
-							printf(" and its value is : %d\n",integer*sign);
+							//printf(" and its value is : %d\n",integer*sign);
+							if(sym!=integersym)
+							{
+								genERR(7,Line);
+								jump(semicolon);
+								break;
+							}
 							_value = integer*sign;
 							if(searchinSTab(1,_name)==-1)
 							{
@@ -528,7 +533,7 @@ int constdec()
 							}
 							else
 							{
-								printf("**** MULTII-DECLARATION! ****\n");
+								//printf("**** MULTII-DECLARATION! ****\n");
 								genERR(6,Line);
 								jump(semicolon);
 								break;
@@ -537,7 +542,7 @@ int constdec()
 							sym = getsym();
 							if(sym != comma && sym != semicolon)
 							{
-								printf("**** A COMMA OR A SEMICOLON ****\n");
+								//printf("**** A COMMA OR A SEMICOLON ****\n");
 								genERR(11,Line);
 								jump(semicolon);
 								break;
@@ -545,7 +550,7 @@ int constdec()
 						}
 						else
 						{
-							printf("**** ERROR IN CONSTANT DECLARATION! ****\n");
+							//printf("**** ERROR IN CONSTANT DECLARATION! ****\n");
 							genERR(7,Line);
 							jump(semicolon);
 							break;
@@ -558,12 +563,12 @@ int constdec()
                 do{
 					_typ = 2;
                     sym = getsym();
-                    printf("declare a const float named : %s",token);
+                    //printf("declare a const float named : %s",token);
                     strcpy(_name,token);
 					sym = getsym();
 					if(sym!=becomes)
 					{
-						printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
+						//printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
 						genERR(5,Line);
 						jump(semicolon);
 						break;
@@ -573,22 +578,42 @@ int constdec()
                         sym = getsym();
                         if(sym==real||sym==minus||sym==add||sym==integersym)
                         {
-                            while(sym!=real&&sym!=integersym)
+                            if(sym!=real&&sym!=integersym)
                             {
                                 if(sym==minus)
                                     sign*=-1;
                                 sym = getsym();
                             }
+
+							if(sym!=real&&sym!=integersym&&(sym==minus||sym==add))
+                            {
+                                if(sym==minus)
+                                    sign*=-1;
+                                sym = getsym();
+                            }
+							else
+							{
+								genERR(7,Line);jump(semicolon);break;
+							}
+
+							if(sym!=real&&sym!=integersym)
+                            {
+                                genERR(7,Line);
+								jump(semicolon);
+								break;
+                            }
+
                             if(sym==integersym)
                             {
-								printf(" and its value is : %d\n",integer*sign);
+								//printf(" and its value is : %d\n",integer*sign);
 								_value = integer*sign;
                             }
 							else
 							{
-                                printf(" and its value is : %f\n",floatnum*sign);
+                                //printf(" and its value is : %f\n",floatnum*sign);
 								_value = floatnum*sign;
 							}
+
 							if(searchinSTab(1,_name)==-1)
 							{
 
@@ -596,24 +621,25 @@ int constdec()
 							}
 							else
 							{
-								printf("**** multi defined in float const ****\n");
+								//printf("**** multi defined in float const ****\n");
 								genERR(6,Line);
-								jump(semicolon);
+								jump(semicolon);break;
 							}
 							sign = 1;
                             sym = getsym();
                             if(sym != comma && sym != semicolon)
 							{
-								printf("**** A COMMA OR A SEMICOLON ****\n");
+								//printf("**** A COMMA OR A SEMICOLON ****\n");
 								genERR(11,Line);
-								jump(semicolon);
+								jump(semicolon);break;
 							}
 						}
 						else
 						{
-							printf("**** ERROR IN CONSTANT DECLARATION! ****\n");
+							//printf("**** ERROR IN CONSTANT DECLARATION! ****\n");
 							genERR(7,Line);
 							jump(semicolon);
+							break;
 						}
                     }
                 }while(sym==comma);
@@ -623,12 +649,12 @@ int constdec()
                 do{
 					_typ = 3;
                     sym = getsym();//获取标识符
-                    printf("declare a const char named : %s",token);
+                    //printf("declare a const char named : %s",token);
                     strcpy(_name,token);
                     sym = getsym();
                     if(sym!=becomes)
 					{
-						printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
+						//printf("**** YOU MUST INITIALIZE THE CONSTANT! ****");//报错
 						genERR(5,Line);
 						jump(semicolon);
 					}
@@ -637,24 +663,23 @@ int constdec()
                         sym = getsym();
                         if(sym!=cha)
                         {
-							printf("**** THERE SHOULD BE A CHAR ****\n");
+							//printf("**** THERE SHOULD BE A CHAR ****\n");
 							genERR(7,Line);
 							jump(semicolon);
 						}
                         else
                         {
-                            printf(" and its value is : %c\n",ch);
+                            //printf(" and its value is : %c\n",ch);
                             _value = ch;
 							if(searchinSTab(1,_name)==-1)
 							{
-
 								addSTab(_obj,_typ,_name,_value);
 							}
 							else
 							{
-								printf("**** multi defined in char const ****\n");
+								//printf("**** multi defined in char const ****\n");
 								genERR(6,Line);
-								jump(semicolon);
+								jump(semicolon);break;
 							}
 							sym = getsym();
                             if(sym != comma && sym != semicolon)
@@ -669,7 +694,7 @@ int constdec()
                 sym = getsym();
                 break;
             default:
-                printf("**** WHAT IS THIS IN CONSTANT DECLARATION? ****\n");
+                //printf("**** WHAT IS THIS IN CONSTANT DECLARATION? ****\n");
 				genERR(7,Line);
 				jump(semicolon);
 				sym = getsym();
@@ -1389,7 +1414,7 @@ int valuelist(int result)//有预读,
 			return;
 		}
 	}
-    if(i<functT[result].paranum)
+	if(i<functT[result].paranum)
 	{
 		printf("****  ****\n");
 		genERR(14,Line);
@@ -1806,7 +1831,7 @@ int whilestatement()
 
     printf("out while\n");
 }
-//完成
+//错误处理检查完毕
 int forstatement()//错误处理
 {
 	int i;
@@ -1827,6 +1852,7 @@ int forstatement()//错误处理
 		genERR(2,Line);
 		jump(lparent);
 	}
+
 	sym = getsym();//标识符
 	strncpy(name,token,100);
     sym = getsym();//=
@@ -1835,37 +1861,37 @@ int forstatement()//错误处理
 		genERR(19,Line);
 		jump(becomes);
 	}
+
     sym = getsym();
     expression();
 	if(sym!=semicolon)
 	{
-		genERR(1,Line);jump(semicolon);
+		genERR(1,Line);
+		jump(semicolon);
 	}
+
 	result = searchident(name,2);
 	if(result!=-1)
 	{
 		rType = judgeType(result);
 		if(rType==1)
 		{
-			printf("1583\n");
+			//printf("1583\n");
 			genERR(20,Line);
-
 		}
 		else if(rType==2)
 		{
 			genPcode(STO,1,globalTab[result].adr);
-
 		}
 		else if(rType==3)
 		{
 			genPcode(STO,2,globalTab[result].adr);
-
 		}
 
 	}
 	else
 	{
-		printf("1598 cant find\n");
+		//printf("1598 cant find\n");
 		genERR(18,Line);
 	}
 
@@ -1890,7 +1916,6 @@ int forstatement()//错误处理
 	result = searchident(token,2);
 	if(result!=-1)
 	{
-
 		rType = judgeType(result);
 		if(rType==1)
 		{
@@ -1926,6 +1951,10 @@ int forstatement()//错误处理
     sym = getsym();//+-
 	strncpy(name2,token,100);
     sym = getsym();//integersym
+	if(sym!=integersym)
+	{
+		genERR(7,Line);jump(integersym);
+	}
 
 	//genPcode(LIT,0,integer);
 	tmp[tmp_index].funct = LIT;
@@ -1933,6 +1962,12 @@ int forstatement()//错误处理
 	tmp[tmp_index].opr2 = integer;
 	tmp_index++;
 
+	if(name2[0]!='-'&&name2[0]!='+')
+	{
+		//printf("asdasdsadsdsadasdsadsadsad\n");
+		genERR(7,Line);
+		jump1(add,minus);
+	}
 
 	if(name2[0]=='-')
 	{
@@ -1944,32 +1979,26 @@ int forstatement()//错误处理
 	}
 	else if(name2[0]=='+')
 	{
-	//	genPcode(OPR,0,2);
+		//genPcode(OPR,0,2);
 		tmp[tmp_index].funct = OPR;
 		tmp[tmp_index].opr1 = 0;
 		tmp[tmp_index].opr2 = 2;
 		tmp_index++;
 	}
-	else
-	{
-		printf("asdasdsadsdsadasdsadsadsad\n");
-		genERR(7,Line);
-		jump1(add,minus);
-	}
+
+
 	result1 = searchident(name1,2);
 	if(result1!=-1)
 	{
-
 		rType = judgeType(result1);
 		if(rType==1)
 		{
-			printf("1663**** can't revaluate const ****\n");
+			//printf("1663**** can't revaluate const ****\n");
 			genERR(20,Line);
-			return;
 		}
 		else if(rType==2)
 		{
-		//	genPcode(STO,1,globalTab[result].adr);
+			//genPcode(STO,1,globalTab[result].adr);
 			tmp[tmp_index].funct = STO;
 			tmp[tmp_index].opr1 = 1;
 			tmp[tmp_index].opr2 = globalTab[result].adr;
@@ -1977,7 +2006,7 @@ int forstatement()//错误处理
 		}
 		else if(rType==3)
 		{
-		//	genPcode(STO,2,globalTab[result].adr);
+			//genPcode(STO,2,globalTab[result].adr);
 			tmp[tmp_index].funct = STO;
 			tmp[tmp_index].opr1 = 2;
 			tmp[tmp_index].opr2 = globalTab[result].adr;
@@ -1986,7 +2015,7 @@ int forstatement()//错误处理
 	}
 	else
 	{
-		printf("**** using undefined variable ****\n");
+		//printf("**** using undefined variable ****\n");
 		genERR(18,Line);
 	}
 
@@ -1995,6 +2024,7 @@ int forstatement()//错误处理
 	{
 		genERR(2,Line);jump(rparent);
 	}
+
     sym = getsym();
     statement();
 	//此处插入指令
@@ -2716,16 +2746,9 @@ void interpret()
 	do
 	{
 
-        fprintf(OUT,"t:%d\t%d\t%s\t%d\t%f\n",t,p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
-        if(p>C_INDEX)
-        {
-
-            return;
-        }
-
-        if(t>=3000){
-            printf("STACK OVER FLOW!\n");
-        }
+        //fprintf(OUT,"t:%d\t%d\t%s\t%d\t%f\n",t,p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
+        if(p>C_INDEX){return;}
+        if(t>=3000){printf("STACK OVER FLOW!\n");return;}
 		switch(CodeList[p].funct)
 		{
 			case LOD:
@@ -2738,13 +2761,12 @@ void interpret()
 					case 2://全局变量
 						t++;
 						s[t] = s[(int)CodeList[p].opr2];
-					//	fprintf(OUT,"LOD:lod global s[%d]:%f into s[%d],and its value is %f\n",(int)CodeList[p].opr2,s[(int)CodeList[p].opr2],t,s[t]);
-
+						//fprintf(OUT,"LOD:lod global s[%d]:%f into s[%d],and its value is %f\n",(int)CodeList[p].opr2,s[(int)CodeList[p].opr2],t,s[t]);
 						break;
 					case 3://局部
 						t++;
 						s[t] = s[base[base_i-1]+2+(int)CodeList[p].opr2];
-					//	fprintf(OUT,"LOD:lod loacal s[%d]:%f into s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2],t,s[t]);
+						//fprintf(OUT,"LOD:lod loacal s[%d]:%f into s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2],t,s[t]);
 						break;
 				}
 				break;
@@ -2757,11 +2779,11 @@ void interpret()
 				{
 					case 1://全局
 						s[(int)CodeList[p].opr2] =s[t] ;
-					//	fprintf(OUT,"STO : GLOBAL : %f",s[t]);
+						//fprintf(OUT,"STO : GLOBAL : %f",s[t]);
 						break;
 					case 2://局部
 						s[base[base_i-1]+2+(int)CodeList[p].opr2] = s[t];
-                   //     fprintf(OUT,"STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+						//fprintf(OUT,"STO:store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 				t--;
@@ -2781,18 +2803,17 @@ void interpret()
 			case OPR:
 				switch((int)CodeList[p].opr2)
 				{
-					case 0:
-						//fanhui
+					case 0://return
 						switch(CodeList[p].opr1)
 						{
 							case 0:
 								t = base[base_i-1];
 								p = s[base[base_i-1]+2];
 								break;
-							case 1://zhedoushixieshenmeluanqibazaode
-								fprintf(OUT,"s[t]:%f\n",s[t]);
+							case 1:
+								//fprintf(OUT,"s[t]:%f\n",s[t]);
 								s[base[base_i-1]]=s[t];
-								fprintf(OUT,"OPR:store s[%d]:%f into s[%d],and it now is %f\n",t,s[t],base[base_i-1],s[base[base_i-1]]);
+								//fprintf(OUT,"OPR:store s[%d]:%f into s[%d],and it now is %f\n",t,s[t],base[base_i-1],s[base[base_i-1]]);
 								p = s[base[base_i-1]+2];
 								t = base[base_i-1];
 								break;
@@ -2813,7 +2834,6 @@ void interpret()
 						break;
 					case 4:
 						t--;
-
 						s[t] = s[t]*s[t+1];
                        // fprintf(OUT,"*******:%f\n",s[t]);
 						break;
@@ -2852,17 +2872,14 @@ void interpret()
 				break;
 			case CAL:
 				t++;
-			//	fprintf(OUT,"1:%d\n",t);
+				//fprintf(OUT,"1:%d\n",t);
 				base[base_i] = t;
 				base_i++;
-
 				s[t] = 0;//调用函数时，当前运行栈的位置,这个不知道欸
 				s[t+1] = base_i-1;
 				s[t+2] = p;//调用函数后的下一条指令在指令表中的位置。。
 				t+=2;
 			//	fprintf(OUT,"2:%d\n",t);
-
-
 				t=t+CodeList[p].opr1;//数据栈腾出相应的值
 				p = (int)CodeList[p].opr2;
 			//	fprintf(OUT,"3:%d\n",t);
@@ -2872,14 +2889,11 @@ void interpret()
 			//	fprintf(OUT,"1:%d\n",t);
 				base[base_i] = t;
 				base_i++;
-
 				s[t] = 0;//调用函数时，当前运行栈的位置,这个不知道欸
 				s[t+1] = base_i-1;
 				s[t+2] = -1;//调用函数后的下一条指令在指令表中的位置。。
 				t+=2;
 			//	fprintf(OUT,"2:%d\n",t);
-
-
 				t=t+CodeList[p].opr1;//数据栈腾出相应的值
 				p = (int)CodeList[p].opr2;
 			//	fprintf(OUT,"3:%d\n",t);
@@ -2903,8 +2917,7 @@ void interpret()
 						break;
 					case 2://局部
 						s[base[base_i]+2+(int)CodeList[p].opr2] = s[t];
-					//	fprintf(OUT,"STP :store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i]+2+(int)CodeList[p].opr2,s[base[base_i]+2+(int)CodeList[p].opr2]);
-
+						//fprintf(OUT,"STP :store s[%d]:%f into s[%d],and its value is %f\n",t,s[t],base[base_i]+2+(int)CodeList[p].opr2,s[base[base_i]+2+(int)CodeList[p].opr2]);
 						//printf("stp:%f\n",s[t]);
 						break;
 				}
@@ -2914,24 +2927,21 @@ void interpret()
 				base_i++;
 				s[base[base_i-1]+2] = p;
 				p = (int)CodeList[p].opr2;
-
 				break;
 			case INT:
 				t+=CodeList[p].opr2;
 				break;
-
-
 			case WRT:
 				switch(CodeList[p].opr1)
 				{
 					case 1://变
-						printf("WRITE STRING:%f\n",s[t]);
+						//printf("WRITE STRING:%f\n",s[t]);
+						printf("%f",s[t]);
 						t--;
 						break;
 					case 2://常
-						printf("WRITE:%s\n",constarray[(int)CodeList[p].opr2].s);
-
-
+						//printf("WRITE:%s\n",constarray[(int)CodeList[p].opr2].s);
+						printf("%s",constarray[(int)CodeList[p].opr2].s);
 						break;
 				}//printf();
                 break;
@@ -2939,18 +2949,15 @@ void interpret()
 				switch(CodeList[p].opr1)
 				{
 					case 1://全局
-
 						s[t]=s[(int)s[t]];
-			//			fprintf(OUT,"LOAD GLOBAL:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t],s[(int)s[t]],t,s[t]);
+						//fprintf(OUT,"LOAD GLOBAL:load s[%d]:%f into s[%d],and it now is:%f\n",(int)s[t],s[(int)s[t]],t,s[t]);
 						break;
 					case 2://局部
-             //           fprintf(OUT,"s[t]:s[%d]:%f\n",t,s[t]);
+						//fprintf(OUT,"s[t]:s[%d]:%f\n",t,s[t]);
 						s[t]=s[base[base_i-1]+2+(int)s[t]];
-			//			fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]],t,s[t]);
+						//fprintf(OUT,"LOAD LOCAL:load s[%d]:%f into s[%d],and it now is:%f\n",base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]],t,s[t]);
 						break;
 				}
-
-
 				break;
 			case STOR:
 				switch(CodeList[p].opr1)
@@ -2959,17 +2966,13 @@ void interpret()
 						t--;
 						s[(int)s[t]]=s[t+1];
 				//		fprintf(OUT,"STOR GLOBAL:store s[%d]:%f into s[%d],and its value is %f\n",t+1,s[t+1],(int)s[t],s[(int)s[t]]);
-
 						break;
 					case 2://局部
                         t--;
 				//		fprintf(OUT,"s[t]:s[%d]:%f\n",t,s[t]);
 			//		fprintf(OUT,"s[t+1]:s[%d]:%f\n",t+1,s[t+1]);
-
 						s[base[base_i-1]+2+(int)s[t]] = s[t+1];
-
                   //      fprintf(OUT,"STOR LOCAL:store s[%d]:%f into s[%d],and its value is %f\n",t+1,s[t+1],base[base_i-1]+2+(int)s[t],s[base[base_i-1]+2+(int)s[t]]);
-
 						break;
 				}
 				t--;
@@ -2979,16 +2982,14 @@ void interpret()
                 switch(CodeList[p].opr1)
 				{
 					case 1://全局
-					    printf("scanf global:");
+					    //printf("scanf global:");
 						scanf("%lf",&s[(int)CodeList[p].opr2]);
-
 						break;
 					case 2://局部
 						scanf("%lf",&s[base[base_i-1]+2+(int)CodeList[p].opr2]);
-                        fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        //fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
-				//t--;
 				break;
 
 		}
