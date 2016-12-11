@@ -1830,6 +1830,10 @@ int forstatement()//错误处理
 	}
     sym = getsym();
     expression();
+	if(sym!=semicolon)
+	{
+		genERR(1,Line);jump(semicolon);
+	}
 	result = searchident(name,2);
 	if(result!=-1)
 	{
@@ -1860,6 +1864,10 @@ int forstatement()//错误处理
 
 	backset1 = C_INDEX;
     condition();
+	if(sym!=semicolon)
+	{
+		genERR(1,Line);jump(semicolon);
+	}
 	genPcode(JPC,0,0);
 	backset2 = C_INDEX-1;
 
@@ -2098,6 +2106,10 @@ int printfstatement()//理论上printf也能写完了
     else//没有左括号
     {
 		printf("**** where is the left parenthese of print? ****\n");
+		genERR(2,Line);jump(rparent);
+	}
+	if(sym!=rparent)
+	{
 		genERR(2,Line);jump(rparent);
 	}
     printf("out print\n");
