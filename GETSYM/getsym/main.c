@@ -1389,6 +1389,13 @@ int valuelist(int result)//ÓÐÔ¤¶Á,
 			return;
 		}
 	}
+    if(i<functT[result].paranum)
+	{
+		printf("****  ****\n");
+		genERR(14,Line);
+		jump(rparent);
+		return;
+	}
     printf("out val list\n");
 }
 
