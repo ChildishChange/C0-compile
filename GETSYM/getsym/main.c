@@ -585,13 +585,13 @@ int constdec()
                                 sym = getsym();
                             }
 
-							if(sym!=real&&sym!=integersym&&(sym==minus||sym==add))
+							if(sym==minus||sym==add)
                             {
                                 if(sym==minus)
                                     sign*=-1;
                                 sym = getsym();
                             }
-							else
+							else if(sym!=real&&sym!=integersym)
 							{
 								genERR(7,Line);jump(semicolon);break;
 							}
