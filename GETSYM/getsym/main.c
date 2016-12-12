@@ -1967,7 +1967,7 @@ int forstatement()//´íÎó´¦Àí
 		//printf("asdasdsadsdsadasdsadsadsad\n");
 		genERR(7,Line);
 		jump1(add,minus);
-		strncpy(name1,token,100);
+		strncpy(name2,token,100);
 	}
 
 	if(name2[0]=='-')
