@@ -140,6 +140,10 @@ void jump(int stop)
 	while(sym!=stop)
 	{
 		sym = getsym();
+		if(feof(IN))
+        {
+            return;
+        }
 	}
 }
 void jump1(int stop1,int stop2)
@@ -147,6 +151,10 @@ void jump1(int stop1,int stop2)
 	while(sym!=stop1&&sym!=stop2)
 	{
 		sym = getsym();
+		if(feof(IN))
+        {
+            return;
+        }
 	}
 }
 /*=========================================*/
@@ -203,7 +211,7 @@ int main()
 	}
 	CodeList[0].opr1 = functT[funct_index_of_main].end-functT[funct_index_of_main].begin;
 
-	printf("no\tadr\tname\tobj\ttyp\tlink\tref\tvalue\tnormal\n");
+/*	printf("no\tadr\tname\tobj\ttyp\tlink\tref\tvalue\tnormal\n");
 	for(i = 0;i<globalTabAddr;i++)
 	{
 
@@ -226,14 +234,14 @@ int main()
     for(i = 0;i<functTAddr+1;i++)
     {
         printf("begin:%d,end:%d,start index:%d,paranum:%d\n",functT[i].begin,functT[i].end,functT[i].startindex,functT[i].paranum);
-    }
+    }*/
     OUT = fopen("D:\\out.txt","w");
 	for(i =0;i<C_INDEX;i++)
 	{
         fprintf(OUT,"%d\t%s\t%d\t%f\n",i,cd[CodeList[i].funct-1],CodeList[i].opr1,CodeList[i].opr2);
 	}
-	for(i = 0;i<constarrayindex;i++)
-        printf("%d:%s\n",i,constarray[i].s);
+//	for(i = 0;i<constarrayindex;i++)
+  //      printf("%d:%s\n",i,constarray[i].s);
 
 	if(error_index==0)
 		interpret();
@@ -1427,7 +1435,7 @@ int valuelist(int result)//有预读,
 //cp检查完毕，不可能有问题
 int compoundstatement()//读了一个大括号才进来,这个大括号不是复合语句里的成分
 {
-    printf("enter cp statement!\n");
+ //   printf("enter cp statement!\n");
     sym = getsym();
     if(sym==constsym)
     {
@@ -1437,19 +1445,19 @@ int compoundstatement()//读了一个大括号才进来,这个大括号不是复合语句里的成分
 
     statement_s();
 	//出来之前读了这个语法成分之后的一个元素
-    printf("out cp statement!\n");
+  //  printf("out cp statement!\n");
 }
 //只要保证statement出来之前预读了下一个statement就没有问题
 int statement_s()//并不知道语句列的结束符号是什么,语句列之后总是会有}
 {
-    printf("enter states\n");
+ //   printf("enter states\n");
 	do
 	{
 		statement();
-		printf("at states:%s\n",token);
+	//	printf("at states:%s\n",token);
 	}
 	while(sym != rbrace);
-    printf("out states\n");
+   // printf("out states\n");
 }
 
 
@@ -1662,6 +1670,11 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				result = searchident(name,2);
 				sym = getsym();
 				expression();
+				if(sym!=semicolon)
+                {
+                    genERR(1,Line);
+                    jump(semicolon);
+                }
 				if(result!=-1)
                 {
 					rType = judgeType(result);
@@ -1706,6 +1719,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             }
             else
             {
+                genERR(7,Line);
                  printf("****in statement : what the fuck is this \"%s\" ****\n",token);
                     jump(semicolon);sym = getsym();
             }
@@ -1722,11 +1736,11 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
 	int backset1 = 0;
 	int backset2 = 0;
 
-    printf("enter ifcondition\n");
+  //  printf("enter ifcondition\n");
     sym = getsym();//左括号
     if(sym!=lparent)//这里的错误处理可能有点难
     {
-        printf("there should be a left parenthese\n");
+    //    printf("there should be a left parenthese\n");
 		genERR(2,Line);jump(lparent);
        // expression();
     }
@@ -1738,7 +1752,7 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
 	if(sym!=rparent)
     {
 		genERR(2,Line);jump(rparent);
-		printf("**** wrong symbol in condition! ****\n");//
+	//	printf("**** wrong symbol in condition! ****\n");//
 	}
 	sym = getsym();
     statement();//在跳出expression之前yuduyige xiaokuohao
@@ -1758,13 +1772,13 @@ int ifcondition()//因为是读入了一个if才判断出来进入这个分支
 		CodeList[backset1].opr2 = C_INDEX;
 	}
 
-    printf("out ifcondition\n");
+   // printf("out ifcondition\n");
 }
 //完成 pcode
 int condition()//进入前没有预读
 {
 	int symtmp;
-    printf("enter condition\n");
+  //  printf("enter condition\n");
 	sym = getsym();
     expression();
 
@@ -1774,25 +1788,25 @@ int condition()//进入前没有预读
 	{
 
 	//	genPcode(INT,0,1);
-		printf("this is a %s\n",_symbol[sym]);
+	//	printf("this is a %s\n",_symbol[sym]);
 		sym = getsym();
 
 		expression();//可能读到关系符号然后再跟一个表达式，也可能是
 		genPcode(OPR,0,symtmp);//
-		printf("out condition\n");
+	//	printf("out condition\n");
 
 
 	}
 	else if(sym==rparent||sym==semicolon)
 	{
 		genPcode(OPR,0,12);//直接判断栈顶
-		printf("out condition\n");
+	//	printf("out condition\n");
 		return;
 
 	}
 	else
 	{
-		printf("**** wrong symbol in condition! ****\n");//
+	//	printf("**** wrong symbol in condition! ****\n");//
 		genERR(7,Line);
 		jump1(rparent,semicolon);
 	}
@@ -1805,7 +1819,7 @@ int whilestatement()
 	int backset1;
 	int backset2;
 
-    printf("enter while\n");
+  //  printf("enter while\n");
     sym = getsym();
     if(sym==lparent)
     {
@@ -1829,7 +1843,7 @@ int whilestatement()
 		statement();
 	}
 
-    printf("out while\n");
+   // printf("out while\n");
 }
 //错误处理检查完毕
 int forstatement()//错误处理
@@ -2043,17 +2057,17 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 {
 	int rType;
 	int result = 0;
-    printf("enter scanf\n");
+   // printf("enter scanf\n");
     sym = getsym();//读左括号
     if(sym==lparent)
     {
         do
         {
-			printf("the parameter of scanf:");
+	//		printf("the parameter of scanf:");
             sym = getsym();//读标识符
             if(sym==identsym)
             {
-                printf("%s ",token);
+      //          printf("%s ",token);
 
 				result = searchident(token,2);
 				if(result!=-1)
@@ -2061,7 +2075,7 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 					rType = judgeType(result);
 					if(rType==1)
 					{
-						printf("1710\n");
+				//		printf("1710\n");
 						genERR(20,Line);
 						return;
 					}
@@ -2081,37 +2095,45 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
             }
             else
             {
-                printf("**** there should be some parameter! ****\n");
-				genERR(22,Line);
+               // printf("**** there should be some parameter! ****\n");
+				genERR(7,Line);
             }
 
         }
         while(sym==comma);//读到右括号就读完了，跳出了
         if(sym!=rparent)
 		{
-			printf("**** where is the right parenthese of scanf?/there should be comma to split the parameters ****\n");//如果没写分号怎么办。。。
+		//	printf("**** where is the right parenthese of scanf?/there should be comma to split the parameters ****\n");//如果没写分号怎么办。。。
 			genERR(2,Line);jump(rparent);
 		}
 	}
     else
     {
-        printf("**** where is the left parenthese of scan? ****\n");
+       // printf("**** where is the left parenthese of scan? ****\n");
 		genERR(2,Line);jump(rparent);
     }
-    printf("\nout scanf\n");
+
+//    printf("\nout scanf\n");
 }
 //over Pcode完成
+
+
 int printfstatement()//理论上printf也能写完了
 {
-    printf("enter print\n");
+  //  printf("enter print\n");
     sym = getsym();
-    if(sym==lparent)//左括号
+
+    if(sym!=lparent)//左括号
     {
+        genERR(2,Line);
+        jump(lparent);
+    }
+
         sym = getsym();//字符串还是表达式
-		printf("and it prints :");
+	//	printf("and it prints :");
         if(sym==str)
         {
-            printf("%s\n",token);
+      //      printf("%s\n",token);
 
 			strncpy(constarray[constarrayindex].s,token,100);
 			genPcode(WRT,2,constarrayindex);
@@ -2121,17 +2143,17 @@ int printfstatement()//理论上printf也能写完了
             if(sym==comma)
 			{
 				sym = getsym();
-				printf("print 1:%s:%s\n",token,_symbol[sym]);
+		//		printf("print 1:%s:%s\n",token,_symbol[sym]);
 				expression();
 				genPcode(WRT,1,0);
 			}
             else if(sym==rparent)
             {
-                printf("print statement over\n");
+          //      printf("print statement over\n");
 			}
             else
             {
-				printf("**** wrong in print~ ****\n");//报错
+		//		printf("**** wrong in print~ ****\n");//报错
 				genERR(7,Line);jump(rparent);
 			}
         }
@@ -2140,17 +2162,13 @@ int printfstatement()//理论上printf也能写完了
             expression();//这里的调用之前预读了，出来之前也预读了）
 			genPcode(WRT,1,0);
 		}
-	}
-    else//没有左括号
-    {
-		printf("**** where is the left parenthese of print? ****\n");
-		genERR(2,Line);jump(rparent);
-	}
+
+
 	if(sym!=rparent)
 	{
 		genERR(2,Line);jump(rparent);
 	}
-    printf("out print\n");
+//    printf("out print\n");
 
 }
 
@@ -2158,7 +2176,7 @@ int printfstatement()//理论上printf也能写完了
 int expression()
 {
 	int op ;
-    printf("enter expression\n");
+ //   printf("enter expression\n");
 
    if(sym==minus||sym==add)
     {//cichu yao zhuyi
@@ -2182,13 +2200,13 @@ int expression()
 		else
 			genPcode(OPR,0,2);//+
 	}
-	printf("out expression\n");
+//	printf("out expression\n");
 }
 //pcode已完成
 int term()//调用term前预读了一个
 {
 	int op ;
-    printf("enter term\n");
+ //   printf("enter term\n");
 
     factor();
 	while(sym==divi||sym==multi)
@@ -2201,30 +2219,30 @@ int term()//调用term前预读了一个
 		else
 			genPcode(OPR,0,5);//-/
 	}
-    printf("out term\n");
+   // printf("out term\n");
 }
 //pcode已完成
 int factor()
 {
 	int rType;
-    printf("enter factor\n");
+  //  printf("enter factor\n");
     char tmp[100];
 	int result;
     int i = 1;
     switch (sym)
     {
 		case real:
-            printf("this factor is a real : %f\n",floatnum);
+        //    printf("this factor is a real : %f\n",floatnum);
             genPcode(LIT,2,floatnum);
 			sym = getsym();
             break;
         case integersym:
-            printf("this factor is an integer : %d\n",integer);
+         //   printf("this factor is an integer : %d\n",integer);
             genPcode(LIT,1,integer);
 			sym = getsym();
             break;
         case cha://字符
-            printf("this factor is a char %c",ch);
+          //  printf("this factor is a char %c",ch);
 			genPcode(LIT,3,ch);
             sym = getsym();
             break;
@@ -2237,17 +2255,17 @@ int factor()
                 sym = getsym();
                 if(sym==integersym)
 				{
-					printf("this factor is a real : %f\n",integer*i);
+					//printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,2,integer*i);
                 }
 				else if(sym==real)
 				{
-					printf("this factor is a real : %f\n",floatnum*i);
+					//printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
                 }
 				else
 				{
-					printf("**** error in factor! ****\n");
+					//printf("**** error in factor! ****\n");
 					genERR(7,Line);
 				}
 				sym = getsym();
@@ -2260,17 +2278,17 @@ int factor()
                 sym = getsym();
                 if(sym==integersym)
                 {
-					printf("this factor is a real : %f\n",integer*i);
+					//printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,2,integer*i);
 				}
 				else if(sym==real)
                 {
-					printf("this factor is a real : %f\n",floatnum*i);
+					//printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
 				}
 				else
 				{
-					printf("**** error in factor! ****\n");
+					//printf("**** error in factor! ****\n");
 					genERR(7,Line);
 				}
 				sym = getsym();
@@ -2280,12 +2298,12 @@ int factor()
             {
                 if(sym==integersym)
 				{
-					printf("this factor is an integer : %d\n",integer*i);
+					//printf("this factor is an integer : %d\n",integer*i);
 					genPcode(LIT,2,integer*i);
 				}
 				else
 				{
-					printf("this factor is a float : %f\n",floatnum*i);
+					//printf("this factor is a float : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
 				}
 				sym = getsym();
@@ -2293,7 +2311,7 @@ int factor()
             }
 			else
 			{
-				printf("**** wrong in factor minus ****\n");
+				//printf("**** wrong in factor minus ****\n");
 				genERR(7,Line);
 			}
             break;
@@ -2306,17 +2324,17 @@ int factor()
                 sym = getsym();
                 if(sym==integersym)
 				{
-                    printf("this factor is a real : %f\n",integer*i);
+                   // printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,2,integer*i);
 				}
 				else if(sym==real)
 				{
-					printf("this factor is a real : %f\n",floatnum*i);
+				//	printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
 				}
 				else
 				{
-					printf("**** error in factor! ****\n");
+					//printf("**** error in factor! ****\n");
 					genERR(7,Line);
 				}
 				sym = getsym();
@@ -2329,17 +2347,17 @@ int factor()
                 sym = getsym();
                 if(sym==integersym)
 				{
-					printf("this factor is a real : %f\n",integer*i);
+				//	printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,0,integer*i);
                 }
 				else if(sym==real)
                 {
-					printf("this factor is a real : %f\n",floatnum*i);
+				//	printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,0,floatnum*i);
 				}
 				else
 				{
-					printf("**** error in factor! ****\n");
+				//	printf("**** error in factor! ****\n");
 					genERR(7,Line);
 				}
 				sym = getsym();
@@ -2349,12 +2367,12 @@ int factor()
             {
                 if(sym==integersym)
                 {
-					printf("this factor is an integer : %d\n",integer*i);
+				//	printf("this factor is an integer : %d\n",integer*i);
 					genPcode(LIT,1,integer*i);
 				}
 				else
 				{
-					printf("this factor is a float : %f\n",floatnum*i);
+				//	printf("this factor is a float : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
 				}
 				sym = getsym();
@@ -2362,7 +2380,7 @@ int factor()
             }
 			else
 			{
-				printf("**** wrong in factor minus ****\n");
+				//printf("**** wrong in factor minus ****\n");
 				genERR(7,Line);
 			}
 
@@ -2374,7 +2392,7 @@ int factor()
 			if(sym != rparent)
 			{
 				printf("**** wrong in factor l e l ****\n");
-				genERR(2,Line);
+				genERR(2,Line);jump(rparent);
 			}
 			sym = getsym();
 			break;
@@ -2388,9 +2406,9 @@ int factor()
             if(sym==lparent)//函数
             {
 				//如果这个函数返回值为空报错
-				printf("this factor is a function:%s\n",tmp);
+			//	printf("this factor is a function:%s\n",tmp);
                 result = searchident(tmp,1);
-                printf("resu   lt:%d\n",result);
+             //   printf("resu   lt:%d\n",result);
 				if(result!=-1)
 				{
 					if(functT[result].paranum==0)
@@ -2404,7 +2422,7 @@ int factor()
 				}
 				else
 				{
-					printf("**** NO SUCH FUNCTION ****\n");
+				//	printf("**** NO SUCH FUNCTION ****\n");
 					genERR(18,Line);
 
 				}
@@ -2416,7 +2434,7 @@ int factor()
 				}
 				if(sym!=rparent)
 				{
-					printf("**** function call lost its right parenthese ****\n");
+				//	printf("**** function call lost its right parenthese ****\n");
 					genERR(2,Line);
 				}//错误处理
 				sym = getsym();
@@ -2425,11 +2443,17 @@ int factor()
             }
             else if(sym == lbracket)//数组
             {
-				printf("this factor is a array:%s\n",tmp);
+				//printf("this factor is a array:%s\n",tmp);
 
                 sym = getsym();
                 expression();//跳出之前已经读了]
 				//genPcode(INT,0,1);
+                if(sym!=rbracket)
+                {
+                    genERR(3,Line);
+                    jump(rbracket);
+
+                }
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
@@ -2450,7 +2474,7 @@ int factor()
 				}
 				else
 				{
-					printf("**** using undefined array ****\n");
+					//printf("**** using undefined array ****\n");
 					genERR(18,Line);
 				}
 
@@ -2460,12 +2484,12 @@ int factor()
             }
             else//变量啦
             {
-                printf("this factor is a variable:%s\n",tmp);
+                //printf("this factor is a variable:%s\n",tmp);
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
 					rType = judgeType(result);
-					printf("rType:%d\n",rType);
+					//printf("rType:%d\n",rType);
 					if(rType==1)
 					{
 						genPcode(LOD,1,result);
@@ -2482,7 +2506,7 @@ int factor()
 				}
 				else
 				{
-					printf("**** using undefined variable ****\n");
+					//printf("**** using undefined variable ****\n");
 					genERR(18,Line);
 				}
 				//读到标识符之前已经预读了，此处不用getsym
@@ -2496,12 +2520,13 @@ int factor()
         default :
 			if(sym<0)
 			{
-				genERR(7,Line);
+				break;//genERR(7,Line);
 			}
-            printf("%s:%s\n",_symbol[sym],token);//
+			genERR(7,Line);
+      //      printf("%s:%s\n",_symbol[sym],token);//
             break;
     }
-    printf("out factor\n");
+   // printf("out factor\n");
 
 }
 
