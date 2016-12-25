@@ -2073,11 +2073,12 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 				if(result!=-1)
 				{
 					rType = judgeType(result);
+
 					if(rType==1)
 					{
 				//		printf("1710\n");
 						genERR(20,Line);
-						return;
+						jump1(comma,rparent);
 					}
 					else if(rType==2)
 					{
@@ -2087,16 +2088,27 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 					{
 						genPcode(RED,2,globalTab[result].adr);
 					}
+					else
+                    {
+
+                        genERR(7,Line);
+                        jump1(comma,rparent);
+                    }
 				//	genPcode(RED,0,globalTab[result].adr);
 
 				}
+				else
+                {
+                    genERR(7,Line);
+
+                }
                 sym = getsym();//读入一个逗号
 
             }
             else
             {
                // printf("**** there should be some parameter! ****\n");
-				genERR(7,Line);
+				genERR(7,Line);jump1(comma,rparent);
             }
 
         }
@@ -2742,16 +2754,20 @@ int judgeType(int i)
 	{
 		if(globalTab[i].normal==1)
 		{
-			printf("this is a global varia\n");
+			//printf("this is a global varia\n");
 			return 2;
 
 		}
 		else if(globalTab[i].normal==2)
 		{
-			printf("this is a local varia\n");
+			//printf("this is a local varia\n");
 			return 3;
 		}
 	}
+	else
+    {
+        return -1;
+    }
 }
 void interpret()
 {
