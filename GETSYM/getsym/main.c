@@ -364,7 +364,7 @@ int getsym()
 				}
 			case '\'':
 				ch  = fgetc(IN);
-				if(isalnum(ch)||ch=='+'||ch=='-'||ch=='*'||ch=='/')
+				if(isalnum(ch)||ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='_')
 				{
 					token[sym_index++] = ch;
 					token[sym_index] = '\0';
