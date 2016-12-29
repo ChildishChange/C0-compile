@@ -10,6 +10,11 @@
 
 
 int hasReturn = 0;
+
+int factortype;//1char2int3float
+int termtype;
+int exptype;
+
 FILE *IN, *OUT;
 
 //TODO 添加错误处理
@@ -111,8 +116,8 @@ struct Pcode
 	double opr2;
 }CodeList[CODEMAX];
 int C_INDEX = 0;
-const enum fct  {LOD = 1,LIT,STO,JMP,JPC,OPR,CAL,INT,RED,WRT,LOAD,STOR,CALP,STP,JF,PSTR};
-const char *cd[] = {"LOD","LIT","STO","JMP","JPC","OPR","CAL","INT","RED","WRT","LOAD","STOR","CALP","STP","JF","PSTR"};
+const enum fct  {LOD = 1,LIT,STO,JMP,JPC,OPR,CAL,INT,RED,WRT,LOAD,STOR,CALP,STP,JF,PSTR,SWI};
+const char *cd[] = {"LOD","LIT","STO","JMP","JPC","OPR","CAL","INT","RED","WRT","LOAD","STOR","CALP","STP","JF","PSTR","SWI"};
 
 int searchident(char target[],int type);
 /*==============运行栈================*/
@@ -2220,7 +2225,7 @@ int expression()
 {
 	int op ;
  //   printf("enter expression\n");
-
+	int exptmp = 0;
    if(sym==minus||sym==add)
     {//cichu yao zhuyi
 		op = sym;
@@ -2233,16 +2238,21 @@ int expression()
     {
 		term();
     }
+	exptmp = (exptmp>termtype)?exptmp:termtype;
 	while(sym==add||sym==minus)
 	{
 		op = sym;
 		sym = getsym();
 		term();
+		exptmp = (exptmp>termtype)?exptmp:termtype;
 		if(op==minus)
 			genPcode(OPR,0,3);//-
 		else
 			genPcode(OPR,0,2);//+
+		genPcode(SWI,0,exptmp);
+
 	}
+	exptype = exptmp;
 //	printf("out expression\n");
 }
 //pcode已完成
@@ -2250,23 +2260,29 @@ int term()//调用term前预读了一个
 {
 	int op ;
  //   printf("enter term\n");
-
+	int termtmp = 0;
     factor();
+	termtmp = (termtmp>factortype)?termtmp:factortype;
 	while(sym==divi||sym==multi)
 	{
 		op=sym;
 		sym = getsym();
 		factor();
+		termtmp = (termtmp>factortype)?termtmp:factortype;
 		if(op==multi)
 			genPcode(OPR,0,4);//*
 		else
 			genPcode(OPR,0,5);//-/
+		genPcode(SWI,0,termtmp);
+
 	}
+	termtype = termtmp;
    // printf("out term\n");
 }
 //pcode已完成
 int factor()
 {
+	int factortmp;
 	int rType;
   //  printf("enter factor\n");
     char tmp[100];
@@ -2275,19 +2291,22 @@ int factor()
     switch (sym)
     {
 		case real:
-        //    printf("this factor is a real : %f\n",floatnum);
+			//printf("this factor is a real : %f\n",floatnum);
             genPcode(LIT,2,floatnum);
 			sym = getsym();
+			factortype = 3;
             break;
         case integersym:
-         //   printf("this factor is an integer : %d\n",integer);
+			//printf("this factor is an integer : %d\n",integer);
             genPcode(LIT,1,integer);
 			sym = getsym();
+			factortype = 2;
             break;
         case cha://字符
-          //  printf("this factor is a char %c",ch);
+			//printf("this factor is a char %c",ch);
 			genPcode(LIT,3,ch);
             sym = getsym();
+			factortype = 1;
             break;
         case minus://这是有符号数的第一个符号，实数可能有两个，整数只有一个
             i*=-1;
@@ -2300,11 +2319,13 @@ int factor()
 				{
 					//printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,2,integer*i);
+					factortype = 3;
                 }
 				else if(sym==real)
 				{
 					//printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
+					factortype = 3;
                 }
 				else
 				{
@@ -2323,11 +2344,13 @@ int factor()
                 {
 					//printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,2,integer*i);
+					factortype = 3;
 				}
 				else if(sym==real)
                 {
 					//printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
+					factortype = 3;
 				}
 				else
 				{
@@ -2343,11 +2366,13 @@ int factor()
 				{
 					//printf("this factor is an integer : %d\n",integer*i);
 					genPcode(LIT,2,integer*i);
+					factortype = 2;
 				}
 				else
 				{
 					//printf("this factor is a float : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
+					factortype = 3;
 				}
 				sym = getsym();
 				break;
@@ -2369,11 +2394,13 @@ int factor()
 				{
                    // printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,2,integer*i);
+					factortype = 3;
 				}
 				else if(sym==real)
 				{
 				//	printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
+					factortype = 3;
 				}
 				else
 				{
@@ -2392,11 +2419,13 @@ int factor()
 				{
 				//	printf("this factor is a real : %f\n",integer*i);
 					genPcode(LIT,0,integer*i);
-                }
+					factortype = 3;
+				}
 				else if(sym==real)
                 {
 				//	printf("this factor is a real : %f\n",floatnum*i);
 					genPcode(LIT,0,floatnum*i);
+					factortype = 3;
 				}
 				else
 				{
@@ -2412,11 +2441,13 @@ int factor()
                 {
 				//	printf("this factor is an integer : %d\n",integer*i);
 					genPcode(LIT,1,integer*i);
+					factortype = 2;
 				}
 				else
 				{
 				//	printf("this factor is a float : %f\n",floatnum*i);
 					genPcode(LIT,2,floatnum*i);
+					factortype = 3;
 				}
 				sym = getsym();
 				break;
@@ -2437,6 +2468,7 @@ int factor()
 				printf("**** wrong in factor l e l ****\n");
 				genERR(2,Line);jump(rparent);
 			}
+			factortype = exptype;
 			sym = getsym();
 			break;
 
@@ -2451,15 +2483,24 @@ int factor()
 				//如果这个函数返回值为空报错
 			//	printf("this factor is a function:%s\n",tmp);
                 result = searchident(tmp,1);
-				if(globalTab[functT[result].begin].typ==4)
-				{
-					genERR(24,Line);
-					jump(rparent);
-					break;
-				}
-             //   printf("resu   lt:%d\n",result);
+
+
 				if(result!=-1)
 				{
+					if(globalTab[functT[result].begin].typ==4)
+					{
+						genERR(24,Line);
+						jump(rparent);
+						break;
+					}
+					if(globalTab[functT[result].begin].typ==1)
+						factortmp = 2;
+					else if(globalTab[functT[result].begin].typ==2)
+						factortmp = 3;
+					else if(globalTab[functT[result].begin].typ==3)
+						factortmp = 1;
+
+
 					if(functT[result].paranum==0)
 						genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
 					//genPcode(CAL,0,functT[globalTab[result].ref].startindex);
@@ -2486,6 +2527,7 @@ int factor()
 				//	printf("**** function call lost its right parenthese ****\n");
 					genERR(2,Line);
 				}//错误处理
+				factortype = factortmp;
 				sym = getsym();
 				break;
 
@@ -2496,6 +2538,10 @@ int factor()
 
                 sym = getsym();
                 expression();//跳出之前已经读了]
+				if(exptype==3)
+				{
+					genERR(7,Line);
+				}
 				//genPcode(INT,0,1);
                 if(sym!=rbracket)
                 {
@@ -2506,7 +2552,14 @@ int factor()
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
+
 					rType = judgeType(result);
+					if(arrayT[globalTab[result].ref].elementType==1)
+						factortmp = 2;
+					else if(arrayT[globalTab[result].ref].elementType==2)
+						factortmp = 3;
+					else if(arrayT[globalTab[result].ref].elementType==3)
+						factortmp = 1;
 					if(rType==2)
 					{
 						genPcode(LIT,1,result+3);
@@ -2526,7 +2579,7 @@ int factor()
 					//printf("**** using undefined array ****\n");
 					genERR(18,Line);
 				}
-
+				factortype = factortmp;
 				sym = getsym();
 				break;
 
@@ -2537,6 +2590,13 @@ int factor()
 				result = searchident(tmp,2);
 				if(result!=-1)
 				{
+					if(globalTab[result].typ==1)
+						factortmp = 2;
+					else if(globalTab[result].typ==2)
+						factortmp = 3;
+					else if(globalTab[result].typ==3)
+						factortmp = 1;
+
 					rType = judgeType(result);
 					//printf("rType:%d\n",rType);
 					if(rType==1)
@@ -2559,6 +2619,7 @@ int factor()
 					genERR(18,Line);
 				}
 				//读到标识符之前已经预读了，此处不用getsym
+				factortype = factortmp;
 				break;
             }
 
@@ -3070,6 +3131,15 @@ void interpret()
 						break;
 				}
 				break;
+			case SWI:
+				if((int)CodeList[p].opr2==1)
+					s[t] = (char)s[t];
+				else if((int)CodeList[p].opr2==2)
+					s[t] = (int)s[t];
+				else if((int)CodeList[p].opr2==3)
+					s[t] = (double)s[t];
+				break;
+
 
 		}
 		p++;
