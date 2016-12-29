@@ -211,7 +211,7 @@ int main()
 	}
 	CodeList[0].opr1 = functT[funct_index_of_main].end-functT[funct_index_of_main].begin;
 
-/*	printf("no\tadr\tname\tobj\ttyp\tlink\tref\tvalue\tnormal\n");
+	printf("no\tadr\tname\tobj\ttyp\tlink\tref\tvalue\tnormal\n");
 	for(i = 0;i<globalTabAddr;i++)
 	{
 
@@ -234,7 +234,7 @@ int main()
     for(i = 0;i<functTAddr+1;i++)
     {
         printf("begin:%d,end:%d,start index:%d,paranum:%d\n",functT[i].begin,functT[i].end,functT[i].startindex,functT[i].paranum);
-    }*/
+    }
     OUT = fopen("D:\\out.txt","w");
 	for(i =0;i<C_INDEX;i++)
 	{
@@ -857,7 +857,7 @@ int variadec()
                     else
                     {
 						printf("**** WHAT ? ****\n");//报错
-						genERR(10,Line);
+						genERR(1,Line);
 						jump(semicolon);
 						break;
 					}
@@ -2420,6 +2420,12 @@ int factor()
 				//如果这个函数返回值为空报错
 			//	printf("this factor is a function:%s\n",tmp);
                 result = searchident(tmp,1);
+				if(globalTab[functT[result].begin].typ==4)
+				{
+					genERR(24,Line);
+					jump(rparent);
+					break;
+				}
              //   printf("resu   lt:%d\n",result);
 				if(result!=-1)
 				{
