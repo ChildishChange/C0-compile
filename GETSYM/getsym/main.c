@@ -117,6 +117,14 @@ const char *cd[] = {"LOD","LIT","STO","JMP","JPC","OPR","CAL","INT","RED","WRT",
 int searchident(char target[],int type);
 /*==============运行栈================*/
 double s[3000];
+struct SS
+{
+    int type;//1int2float3char4p5base
+    int integ;
+    float flo;
+    char chr;
+
+}RUN_STACK[4000];
 int T = 0;
 int index_of_main = -1;
 int funct_index_of_main = -1;
@@ -534,6 +542,12 @@ int constdec()
 								jump(semicolon);
 								break;
 							}
+							if(integer==0)
+							{
+								genERR(7,Line);
+								jump(semicolon);
+								break;
+							}
 							_value = integer*sign;
 							if(searchinSTab(1,_name)==-1)
 							{
@@ -614,11 +628,23 @@ int constdec()
                             if(sym==integersym)
                             {
 								//printf(" and its value is : %d\n",integer*sign);
+								if(integer==0)
+								{
+									genERR(7,Line);
+									jump(semicolon);
+									break;
+								}
 								_value = integer*sign;
                             }
 							else
 							{
                                 //printf(" and its value is : %f\n",floatnum*sign);
+								if(floatnum==0.0)
+								{
+									genERR(7,Line);
+									jump(semicolon);
+									break;
+								}
 								_value = floatnum*sign;
 							}
 
@@ -1969,7 +1995,12 @@ int forstatement()//错误处理
 	{
 		genERR(7,Line);jump(integersym);
 	}
+	if(integer==0)
+	{
+		genERR(7,Line);
 
+
+	}
 	//genPcode(LIT,0,integer);
 	tmp[tmp_index].funct = LIT;
 	tmp[tmp_index].opr1 = 0;
