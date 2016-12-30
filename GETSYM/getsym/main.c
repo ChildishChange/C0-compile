@@ -213,7 +213,7 @@ int main()
 
 	if(index_of_main==-1)//没有main函数
 	{
-		genERR(23,Line);
+		genERR(0,Line);
 		printf("HERE ARE YOUR ERRORS:\n");
 		for(i = 0;i<error_index;i++)
         {
@@ -555,7 +555,7 @@ int constdec()
 							}
 							if(integer==0&&haspm)
 							{
-								genERR(7,Line);
+								genERR(24,Line);
 								jump(semicolon);
 								break;
 							}
@@ -643,7 +643,7 @@ int constdec()
 								//printf(" and its value is : %d\n",integer*sign);
 								if(integer==0&&haspm)
 								{
-									genERR(7,Line);
+									genERR(24,Line);
 									jump(semicolon);
 									break;
 								}
@@ -654,7 +654,7 @@ int constdec()
                                 //printf(" and its value is : %f\n",floatnum*sign);
 								if(floatnum==0.0&&haspm)
 								{
-									genERR(7,Line);
+									genERR(24,Line);
 									jump(semicolon);
 									break;
 								}
@@ -780,7 +780,7 @@ int variadec()
 							_typ = 5;
 							if(integer<=0)
 							{
-								printf("**** BIGGER THAN ZERO ****\n");
+								//printf("**** BIGGER THAN ZERO ****\n");
 								genERR(8,Line);
 								jump(semicolon);
 								break;
@@ -895,7 +895,7 @@ int variadec()
                     }
                     else
                     {
-						printf("**** WHAT ? ****\n");//报错
+						//printf("**** WHAT ? ****\n");//报错
 						genERR(1,Line);
 						jump(semicolon);
 						break;
@@ -1043,7 +1043,7 @@ int variadec()
                     else
 					{
 						printf("**** WHAT IS THIS ****");//报错
-						genERR(10,Line);
+						genERR(1,Line);
 						jump(semicolon);
 						break;
 					}
@@ -1115,7 +1115,7 @@ int variadec()
                         else
 						{
 							printf("**** WHAT IS THIS ****\n");
-							genERR(10,Line);
+							genERR(9,Line);
 							jump(semicolon);
 							break;
 						}
@@ -1184,7 +1184,7 @@ int variadec()
                     else
                     {
 						printf("**** WHAT IS THIS ****\n");
-						genERR(10,Line);
+						genERR(1,Line);
 						jump(semicolon);
 					}
 
@@ -1353,12 +1353,12 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
         {
 			_obj = 2;
 			_typ = sym;
-            printf("it has a %s parameter",rWord[sym]);
+            //printf("it has a %s parameter",rWord[sym]);
             sym = getsym();
             //反正要做一些操作
             if(sym!=identsym)
             {
-				printf("can't use reserved word as identifier\n");//
+				//printf("can't use reserved word as identifier\n");//
 				genERR(7,Line);
 			}
 			else
@@ -1389,12 +1389,12 @@ int paralist()//没有预读，出函数时读取了），也是自己这个语法成分里的
 			}
 			else
 			{
-				printf("**** already defined ****\n");
+				//printf("**** already defined ****\n");
 				genERR(6,Line);
 			}
             if(sym!=comma&&sym!=rparent)
             {
-                printf("there should be a comma or a right parent!\n");//报错
+                //printf("there should be a comma or a right parent!\n");//报错
 				genERR(11,Line);
 				jump(rparent);
             }
@@ -1449,7 +1449,7 @@ int valuelist(int result)//有预读,
 	}
 	else
 	{
-		printf("**** WHAT IS THIS IN VALUE LIST ****\n");
+		//printf("**** WHAT IS THIS IN VALUE LIST ****\n");
 		genERR(7,Line);
 		jump(rparent);
 		return;
@@ -1548,19 +1548,19 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             break;
 
 		case returnsym://应该是返回到某个地方吧，暂时不管你
-            printf("enter return\n");
+       //     printf("enter return\n");
             sym = getsym();
             if(sym==semicolon)
             {
 				if(globalTab[functT[functTAddr].begin].typ!=4)
 				{
-					printf("**** 1299 返回值有误！ ****\n");
+				//	printf("**** 1299 返回值有误！ ****\n");
 					genERR(16,Line);
 				}
 				genPcode(OPR,0,0);
-				printf("return nothing\n");
+				//printf("return nothing\n");
 				sym = getsym();
-				printf("out return\n");
+				//printf("out return\n");
 			}
 			else if(sym == lparent)
             {
@@ -1570,7 +1570,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				{
 					if(globalTab[functT[functTAddr].begin].typ!=4)
 					{
-						printf("**** 1310 返回值有误！ ****\n");
+						//printf("**** 1310 返回值有误！ ****\n");
 						genERR(16,Line);
 					}
 
@@ -1579,20 +1579,20 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				{
 					if(globalTab[functT[functTAddr].begin].typ==4)
 					{
-						printf("**** 1310 返回值有误！ ****\n");
+						//printf("**** 1310 返回值有误！ ****\n");
 						genERR(17,Line);
 					}
 				}
                 expression();
 				if(sym != rparent)
 				{
-					printf("**** there should be right par after return ****\n");
+					//printf("**** there should be right par after return ****\n");
 					genERR(2,Line);jump(rparent);
 				}
 				sym = getsym();//;
 				if(sym!=semicolon)
 				{
-					printf("**** there should be a semicolon after return ****\n");
+					//printf("**** there should be a semicolon after return ****\n");
 					genERR(1,Line);jump(semicolon);
 				}
 				genPcode(OPR,1,0);
@@ -1602,7 +1602,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             }
             else
             {
-				printf("**** need parenthese ****\n");//baocuo
+				//printf("**** need parenthese ****\n");//baocuo
 				genERR(2,Line);jump(semicolon);sym = getsym();
 			}
             break;
@@ -1629,7 +1629,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				expression();
 				if(exptype==3)
 				{
-					genERR(71,Line);
+					genERR(25,Line);
 				}
 				//genPcode(INT,0,1);
 				if(sym!=rbracket)
@@ -1647,14 +1647,14 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				}
 				else
 				{
-					printf("1350 NOT FOUND!\n");
+					//printf("1350 NOT FOUND!\n");
 					genERR(18,Line);
 
 				}
 
 				sym = getsym();//=
 
-                printf("at statement:%s\n",token);
+                //printf("at statement:%s\n",token);
 				if(sym==becomes)
                 {
                     sym = getsym();
@@ -1673,7 +1673,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
                 }
 				else
 				{
-					printf("**** NEED = HERE ****\n");
+					//printf("**** NEED = HERE ****\n");
 					genERR(19,Line);
 					jump(semicolon);sym = getsym();
 				}
@@ -1697,13 +1697,13 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				}
 				else
 				{
-					printf("**** NO SUCH FUNCTION ****\n");
+					//printf("**** NO SUCH FUNCTION ****\n");
 					genERR(18,Line);
 
 				}
                 sym =getsym();
 
-                printf("calling a function\n");
+                //printf("calling a function\n");
                 valuelist(result);//
 				if(result!=-1&&functT[result].paranum!=0)
 				{
@@ -1711,13 +1711,13 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				}
 				if(sym!=rparent)
 				{
-					printf("**** function call lost its right parenthese ****\n");
+					//printf("**** function call lost its right parenthese ****\n");
 					genERR(2,Line);
 				}//错误处理
 				sym = getsym();//;
 				if(sym!=semicolon)
 				{
-					printf("**** there should be semicolon ****\n");
+					//printf("**** there should be semicolon ****\n");
 					genERR(1,Line);jump(semicolon);
 				}
                 sym = getsym();
@@ -1738,7 +1738,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 					rType = judgeType(result);
 					if(rType==1)
 					{
-						printf("**** YOU CAN'T RE VALUATE A CONSTANT ****\n");
+						//printf("**** YOU CAN'T RE VALUATE A CONSTANT ****\n");
 						genERR(20,Line);
 
 					}
@@ -1755,14 +1755,14 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 				}
 				else if(result==-1)
 				{
-					printf("**** undefined!!!! ****\n");
+					//printf("**** undefined!!!! ****\n");
 					genERR(18,Line);
 				}
 			   sym = getsym();
             }
             else
             {
-				printf("**** WHAT ARE YOU GOING TO DO WITH IT ****\n");//ERROR
+				//printf("**** WHAT ARE YOU GOING TO DO WITH IT ****\n");//ERROR
 				genERR(7,Line);jump(semicolon);sym = getsym();
 			}
             break;
@@ -1865,7 +1865,7 @@ int condition()//进入前没有预读
 	else
 	{
 	//	printf("**** wrong symbol in condition! ****\n");//
-		genERR(7,Line);
+		genERR(26,Line);
 		jump1(rparent,semicolon);
 	}
 
@@ -2025,11 +2025,11 @@ int forstatement()//错误处理
     sym = getsym();//integersym
 	if(sym!=integersym)
 	{
-		genERR(7,Line);jump(integersym);
+		genERR(27,Line);jump(integersym);
 	}
 	if(integer==0)
 	{
-		genERR(7,Line);
+		genERR(27,Line);
 
 
 	}
@@ -2154,7 +2154,7 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 					else
                     {
 
-                        genERR(7,Line);
+                        genERR(28,Line);
                         jump1(comma,rparent);
                     }
 				//	genPcode(RED,0,globalTab[result].adr);
@@ -2162,7 +2162,7 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 				}
 				else
                 {
-                    genERR(7,Line);
+                    genERR(28,Line);
 
                 }
                 sym = getsym();//读入一个逗号
@@ -2171,7 +2171,7 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
             else
             {
                // printf("**** there should be some parameter! ****\n");
-				genERR(7,Line);jump1(comma,rparent);
+				genERR(28,Line);jump1(comma,rparent);
             }
 
         }
@@ -2516,7 +2516,7 @@ int factor()
 				{
 					if(globalTab[functT[result].begin].typ==4)
 					{
-						genERR(24,Line);
+						genERR(29,Line);
 						jump(rparent);
 						break;
 					}
@@ -2567,7 +2567,7 @@ int factor()
                 expression();//跳出之前已经读了]
 				if(exptype==3)
 				{
-					genERR(71,Line);
+					genERR(25,Line);
 				}
 				//genPcode(INT,0,1);
                 if(sym!=rbracket)
@@ -2625,7 +2625,7 @@ int factor()
 					else if(globalTab[result].typ==3)
 						factortmp = 1;
                     else if(globalTab[result].typ==5)
-                        genERR(7,Line);
+                        genERR(30,Line);
 
 					rType = judgeType(result);
 					//printf("rType:%d\n",rType);
