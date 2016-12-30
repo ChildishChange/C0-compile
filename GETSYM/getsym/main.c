@@ -1421,6 +1421,14 @@ int valuelist(int result)//ÓĞÔ¤¶Á,
     if(sym!=rparent&&sym!=comma)
 	{
 		expression();
+	/*	if(exptype==3&&globalTab[functT[result].begin+i+1].typ!=2)
+			genERR(7,Line);
+		else if(exptype==2&&globalTab[functT[result].begin+i+1].typ!=1)
+			genERR(7,Line);
+		else if(exptype==1&&globalTab[functT[result].begin+i+1].typ!=3)
+			genERR(7,Line);
+*/
+
 		genPcode(STP,2,i+1);
 		i++;
 	}
@@ -1451,6 +1459,12 @@ int valuelist(int result)//ÓĞÔ¤¶Á,
 	{
 		sym = getsym();
 		expression();
+	/*	if(exptype==3&&globalTab[functT[result].begin+i+1].typ!=2)
+			genERR(7,Line);
+		else if(exptype==2&&globalTab[functT[result].begin+i+1].typ!=1)
+			genERR(7,Line);
+		else if(exptype==1&&globalTab[functT[result].begin+i+1].typ!=3)
+			genERR(7,Line);*/
 		genPcode(STP,2,i+1);
 		i++;
 		if(i>functT[result].paranum)
