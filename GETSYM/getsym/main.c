@@ -269,6 +269,7 @@ int main()
         {
             printf("NO.%d ERROR AT LINE %d\n",errors[i].kind,errors[i].line);
         }
+
 	}
 	fclose(OUT);
 	return 0;
@@ -2162,7 +2163,10 @@ int scanfstatement()//出来之前读了这个语法成分之后的一个元素
 				}
 				else
                 {
-                    genERR(28,Line);
+                    if(searchident(token,1)!=-1)
+                        genERR(28,Line);
+                    else
+                        genERR(18,Line);
 
                 }
                 sym = getsym();//读入一个逗号
@@ -2646,7 +2650,10 @@ int factor()
 				else
 				{
 					//printf("**** using undefined variable ****\n");
-					genERR(18,Line);
+					if(searchident(tmp,1)!=-1)
+                        genERR(30,Line);
+                    else
+                        genERR(18,Line);
 				}
 				//读到标识符之前已经预读了，此处不用getsym
 				factortype = factortmp;
@@ -3179,5 +3186,5 @@ void interpret()
 		}
 		p++;
 	}while(p!=0);
-	printf("End INTERPRET!!!!!\n");
+	printf("\nEnd INTERPRET!!!!!\n");
 }
