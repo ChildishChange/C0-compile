@@ -248,6 +248,10 @@ int main()
     {
         printf("begin:%d,end:%d,start index:%d,paranum:%d\n",functT[i].begin,functT[i].end,functT[i].startindex,functT[i].paranum);
     }
+    for(i = 0;i<arrayTAddr+1;i++)
+    {
+        printf("elemet:%d,length:%d\n",arrayT[i].elementType ,arrayT[i].size);
+    }
     OUT = fopen("D:\\out.txt","w");
 	for(i =0;i<C_INDEX;i++)
 	{
@@ -508,6 +512,7 @@ int getsym()
 
 int constdec()
 {
+    int haspm = 0;
 	int sign = 1;
     while(sym==constsym)
     {
@@ -539,6 +544,7 @@ int constdec()
                                 if(sym==minus)
                                     sign*=-1;
                                 sym = getsym();
+                                haspm = 1;
 							}
 							//printf(" and its value is : %d\n",integer*sign);
 							if(sym!=integersym)
@@ -547,7 +553,7 @@ int constdec()
 								jump(semicolon);
 								break;
 							}
-							if(integer==0)
+							if(integer==0&&haspm)
 							{
 								genERR(7,Line);
 								jump(semicolon);
@@ -610,6 +616,7 @@ int constdec()
                                 if(sym==minus)
                                     sign*=-1;
                                 sym = getsym();
+                                haspm = 1;
                             }
 
 							if(sym==minus||sym==add)
@@ -617,6 +624,7 @@ int constdec()
                                 if(sym==minus)
                                     sign*=-1;
                                 sym = getsym();
+                                haspm = 1;
                             }
 							else if(sym!=real&&sym!=integersym)
 							{
@@ -633,7 +641,7 @@ int constdec()
                             if(sym==integersym)
                             {
 								//printf(" and its value is : %d\n",integer*sign);
-								if(integer==0)
+								if(integer==0&&haspm)
 								{
 									genERR(7,Line);
 									jump(semicolon);
@@ -644,7 +652,7 @@ int constdec()
 							else
 							{
                                 //printf(" and its value is : %f\n",floatnum*sign);
-								if(floatnum==0.0)
+								if(floatnum==0.0&&haspm)
 								{
 									genERR(7,Line);
 									jump(semicolon);
@@ -783,7 +791,7 @@ int variadec()
 							if(searchinSTab(1,_name)==-1)
 							{
 								addSTab(_obj,_typ,_name,-1);
-								globalTab[globalTabAddr-1].ref = T;
+								globalTab[globalTabAddr-1].ref = arrayTAddr;
 								if(g_or_l==1)
 								{
 									globalTab[globalTabAddr-1].normal = 1;
@@ -926,7 +934,7 @@ int variadec()
 							if(searchinSTab(1,_name)==-1)
 							{
 								addSTab(_obj,_typ,_name,-1);
-								globalTab[globalTabAddr-1].ref = T;
+								globalTab[globalTabAddr-1].ref = arrayTAddr;
 								if(g_or_l==1)
 								{
 									globalTab[globalTabAddr-1].normal = 1;
@@ -1070,7 +1078,7 @@ int variadec()
 							if(searchinSTab(1,_name)==-1)
 							{
 								addSTab(_obj,_typ,_name,-1);
-								globalTab[globalTabAddr-1].ref = T;
+								globalTab[globalTabAddr-1].ref = arrayTAddr;
 								if(g_or_l==1)
 								{
 									globalTab[globalTabAddr-1].normal = 1;
@@ -1605,6 +1613,10 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             {
 				sym = getsym();
 				expression();
+				if(exptype==3)
+				{
+					genERR(71,Line);
+				}
 				//genPcode(INT,0,1);
 				if(sym!=rbracket)
 				{
@@ -1633,6 +1645,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
                 {
                     sym = getsym();
                     expression();
+
 					if(rType==2)
 					{
 						genPcode(STOR,1,0);
@@ -2540,7 +2553,7 @@ int factor()
                 expression();//跳出之前已经读了]
 				if(exptype==3)
 				{
-					genERR(7,Line);
+					genERR(71,Line);
 				}
 				//genPcode(INT,0,1);
                 if(sym!=rbracket)
@@ -2580,6 +2593,7 @@ int factor()
 					genERR(18,Line);
 				}
 				factortype = factortmp;
+				printf("factortype:%d\n",factortype);
 				sym = getsym();
 				break;
 
@@ -2596,6 +2610,8 @@ int factor()
 						factortmp = 3;
 					else if(globalTab[result].typ==3)
 						factortmp = 1;
+                    else if(globalTab[result].typ==5)
+                        genERR(7,Line);
 
 					rType = judgeType(result);
 					//printf("rType:%d\n",rType);
