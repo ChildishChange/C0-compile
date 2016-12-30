@@ -1418,19 +1418,13 @@ int valuelist(int result)//有预读,
 	//result是函数表里的位置
     printf("enter val list\n");
 
-
+	genPcode(INT,0,3);
     if(sym!=rparent&&sym!=comma)
 	{
 		expression();
-	/*	if(exptype==3&&globalTab[functT[result].begin+i+1].typ!=2)
-			genERR(7,Line);
-		else if(exptype==2&&globalTab[functT[result].begin+i+1].typ!=1)
-			genERR(7,Line);
-		else if(exptype==1&&globalTab[functT[result].begin+i+1].typ!=3)
-			genERR(7,Line);
-*/
 
-		genPcode(STP,2,i+1);
+		//genPcode(INT,0,1);
+		//genPcode(STP,2,i+1);
 		i++;
 	}
 	else if(sym == rparent)
@@ -1460,13 +1454,8 @@ int valuelist(int result)//有预读,
 	{
 		sym = getsym();
 		expression();
-	/*	if(exptype==3&&globalTab[functT[result].begin+i+1].typ!=2)
-			genERR(7,Line);
-		else if(exptype==2&&globalTab[functT[result].begin+i+1].typ!=1)
-			genERR(7,Line);
-		else if(exptype==1&&globalTab[functT[result].begin+i+1].typ!=3)
-			genERR(7,Line);*/
-		genPcode(STP,2,i+1);
+		//genPcode(INT,0,1);
+		//genPcode(STP,2,i+1);
 		i++;
 		if(i>functT[result].paranum)
 		{
@@ -1683,6 +1672,11 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
             else if(sym == lparent)//函数
             {
 				result = searchident(name,1);
+
+                sym =getsym();
+
+                //printf("calling a function\n");
+                valuelist(result);//
 				if(result!=-1)
 				{
 					if(functT[result].paranum==0)
@@ -1702,10 +1696,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 					genERR(18,Line);
 
 				}
-                sym =getsym();
 
-                //printf("calling a function\n");
-                valuelist(result);//
 				if(result!=-1&&functT[result].paranum!=0)
 				{
 					genPcode(JF,0,functT[result].startindex);
@@ -2514,8 +2505,6 @@ int factor()
 				//如果这个函数返回值为空报错
 			//	printf("this factor is a function:%s\n",tmp);
                 result = searchident(tmp,1);
-
-
 				if(result!=-1)
 				{
 					if(globalTab[functT[result].begin].typ==4)
@@ -2532,14 +2521,7 @@ int factor()
 						factortmp = 1;
 
 
-					if(functT[result].paranum==0)
-						genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
-					//genPcode(CAL,0,functT[globalTab[result].ref].startindex);
-					else
-					{
-						genPcode(CALP,functT[result].end-functT[result].begin,functT[result].startindex);
 
-					}
 				}
 				else
 				{
@@ -2549,6 +2531,14 @@ int factor()
 				}
 				sym = getsym();
 				valuelist(result);
+				if(functT[result].paranum==0)
+					genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
+					//genPcode(CAL,0,functT[globalTab[result].ref].startindex);
+				else
+				{
+					genPcode(CALP,functT[result].paranum,functT[result].end-functT[result].begin);
+
+				}
 				if(result!=-1&&functT[result].paranum!=0)
 				{
 					genPcode(JF,0,functT[result].startindex);
@@ -2990,7 +2980,7 @@ void interpret()
 							case 1:
 								//printf("s[t]:%f\n",s[t]);
 								s[base[base_i-1]]=s[t];
-								printf("\nreturn pcode %d :%d\n",base[base_i-1]+2,(int)s[base[base_i-1]+2]);
+							//	printf("\nreturn pcode %d :%d\n",base[base_i-1]+2,(int)s[base[base_i-1]+2]);
 								p = s[base[base_i-1]+2];
 								t = base[base_i-1];
 								break;
@@ -3048,6 +3038,7 @@ void interpret()
 				}
 				break;
 			case CAL:
+                t-=3;
 				t++;
 				//fprintf(OUT,"1:%d\n",t);
 				base[base_i] = t;
@@ -3076,18 +3067,19 @@ void interpret()
 			//	fprintf(OUT,"3:%d\n",t);
 				break;
 			case CALP:
-				t++;
+			    t++;
+				t-=3;
+				t-=(int)CodeList[p].opr1;
+
 				base[base_i] = t;
-				//zheli base_i 不++
-				s[t] = 0;//调用函数时，当前运行栈的位置,这个不知道欸
+				base_i++;
+				s[t] = 0;
 				s[t+1] = base_i;
-				s[t+2] = p;//调用函数后的下一条指令在指令表中的位置。。
-				//printf("\nre turn pcode %d:%d\n",t+2,p);
+				s[t+2] = p;
 				t+=2;
-				//pbubian
-				t+=(int)CodeList[p].opr1;//数据栈腾出相应的值
+				t+=(int)CodeList[p].opr2;//数据栈腾出相应的值
 				break;
-			case STP:
+		/*	case STP:
 				switch(CodeList[p].opr1)
 				{
 					case 1://全局
@@ -3100,11 +3092,9 @@ void interpret()
 						break;
 				}
 				t--;
-				break;
+				break;*/
 			case JF:
-				base_i++;
 				s[base[base_i-1]+2] = p;
-				printf("\nre turn pcode %d:%d\n",base[base_i-1]+2,p);
 				p = (int)CodeList[p].opr2;
 				break;
 			case INT:
@@ -3171,7 +3161,7 @@ void interpret()
 						break;
 					case 2://局部
 						scanf("%lf",&s[base[base_i-1]+2+(int)CodeList[p].opr2]);
-                        //fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
+                        fprintf(OUT,"SCANF LOCAL:s[%d],and its value is %f\n",base[base_i-1]+2+(int)CodeList[p].opr2,s[base[base_i-1]+2+(int)CodeList[p].opr2]);
 						break;
 				}
 				break;
