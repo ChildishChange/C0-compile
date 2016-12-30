@@ -1684,7 +1684,7 @@ int statement()//这个是语句，每个case结束之后读一个分号，然后再读一个，，看情况
 					//genPcode(CAL,0,functT[globalTab[result].ref].startindex);
 					else
 					{
-						genPcode(CALP,functT[result].end-functT[result].begin,functT[result].startindex);
+						genPcode(CALP,functT[result].paranum,functT[result].end-functT[result].begin);
 
 					}
 				    //genPcode(CAL,functT[result].end-functT[result].begin,functT[result].startindex);
@@ -3074,7 +3074,7 @@ void interpret()
 				base[base_i] = t;
 				base_i++;
 				s[t] = 0;
-				s[t+1] = base_i;
+				s[t+1] = base_i-1;
 				s[t+2] = p;
 				t+=2;
 				t+=(int)CodeList[p].opr2;//数据栈腾出相应的值
@@ -3139,6 +3139,7 @@ void interpret()
 					case 1://全局
 						t--;
 						s[(int)s[t]]=s[t+1];
+						fprintf(OUT,"STOR,%f  into s[%d]\n",s[t+1],(int)s[t]);
 				//		fprintf(OUT,"STOR GLOBAL:store s[%d]:%f into s[%d],and its value is %f\n",t+1,s[t+1],(int)s[t],s[(int)s[t]]);
 						break;
 					case 2://局部
