@@ -2206,7 +2206,7 @@ int printfstatement()//理论上printf也能写完了
 				sym = getsym();
 		//		printf("print 1:%s:%s\n",token,_symbol[sym]);
 				expression();
-				genPcode(WRT,1,0);
+				genPcode(WRT,1,exptype);
 			}
             else if(sym==rparent)
             {
@@ -2221,7 +2221,7 @@ int printfstatement()//理论上printf也能写完了
         else
 		{
             expression();//这里的调用之前预读了，出来之前也预读了）
-			genPcode(WRT,1,0);
+			genPcode(WRT,1,exptype);
 		}
 
 
@@ -3092,7 +3092,12 @@ void interpret()
 				{
 					case 1://变
 						//printf("WRITE STRING:%f\n",s[t]);
-						printf("%f",s[t]);
+						if((int)CodeList[p].opr2==1)
+							printf("%c",(char)s[t]);
+						else if((int)CodeList[p].opr2==2)
+							printf("%d",(int)s[t]);
+						else if((int)CodeList[p].opr2==3)
+							printf("%f",s[t]);
 						t--;
 						break;
 					case 2://常
