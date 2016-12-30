@@ -2856,7 +2856,7 @@ int searchident(char target[],int type)
 			}
 			break;
 		case 2://变量返回局部变量的 ，返回全局变量的
-			for(i = functT[functTAddr].begin;i<=globalTabAddr;i++)//这里是局部的
+			for(i = functT[functTAddr].begin+1;i<=globalTabAddr;i++)//这里是局部的
 			{
 				if(strncmp(globalTab[i].name,target,20)==0)
 				{
@@ -2908,7 +2908,7 @@ void interpret()
 {
 	int base[3000];
 	int base_i = 0;
-
+    int flag = 0;
 	int t = 0;//栈顶
 	int b = 0;//base
 	int p = 0;//next pcode
@@ -2923,7 +2923,7 @@ void interpret()
 	do
 	{
 
-        //fprintf(OUT,"t:%d\t%d\t%s\t%d\t%f\n",t,p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
+        fprintf(OUT,"t:%d\t%d\t%s\t%d\t%f\n",t,p,cd[CodeList[p].funct-1],CodeList[p].opr1,CodeList[p].opr2);
         if(p>C_INDEX){return;}
         if(t>=3000){printf("STACK OVER FLOW!\n");return;}
 		switch(CodeList[p].funct)
@@ -2988,9 +2988,9 @@ void interpret()
 								p = s[base[base_i-1]+2];
 								break;
 							case 1:
-								//fprintf(OUT,"s[t]:%f\n",s[t]);
+								//printf("s[t]:%f\n",s[t]);
 								s[base[base_i-1]]=s[t];
-								//fprintf(OUT,"OPR:store s[%d]:%f into s[%d],and it now is %f\n",t,s[t],base[base_i-1],s[base[base_i-1]]);
+								printf("\nreturn pcode %d :%d\n",base[base_i-1]+2,(int)s[base[base_i-1]+2]);
 								p = s[base[base_i-1]+2];
 								t = base[base_i-1];
 								break;
@@ -3082,6 +3082,7 @@ void interpret()
 				s[t] = 0;//调用函数时，当前运行栈的位置,这个不知道欸
 				s[t+1] = base_i;
 				s[t+2] = p;//调用函数后的下一条指令在指令表中的位置。。
+				//printf("\nre turn pcode %d:%d\n",t+2,p);
 				t+=2;
 				//pbubian
 				t+=(int)CodeList[p].opr1;//数据栈腾出相应的值
@@ -3103,6 +3104,7 @@ void interpret()
 			case JF:
 				base_i++;
 				s[base[base_i-1]+2] = p;
+				printf("\nre turn pcode %d:%d\n",base[base_i-1]+2,p);
 				p = (int)CodeList[p].opr2;
 				break;
 			case INT:
