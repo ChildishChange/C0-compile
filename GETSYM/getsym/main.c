@@ -36,6 +36,45 @@ const char *_symbol[]={ "constsym","intsym","floatsym","charsym","voidsym","retu
                         "lparent","rparent","lbracket","rbracket","lbrace","rbrace",
                         "add","minus","multi","divi",
                         "becomes","equal","greathan","noless","lessthan","nomore","noequal","semicolon","comma"};
+
+const char *errorss[] = {
+            "没有main函数",
+            "缺少分号",
+            "缺小括号",
+            "缺中括号",
+            "缺大括号",
+            "常数未赋值",
+            "重复定义",
+            "错误的符号",
+            "数组长度小于等于0",
+            "使用无符号整数以外的值定义数组长度",
+            "",
+            "没有逗号",
+            "main函数有void以外的返回值",
+            "",
+            "传参不完整",
+            "参数个数超出",
+            "缺少返回值",
+            "返回值类型不匹配",
+            "未定义的变量或常量或函数",
+            "数组赋值与for循环没有等于符号",
+            "不允许给常量重新赋值",
+            "while条件异常",
+            "",
+            "",
+            "0前有符号",
+            "数组下标不能是实数",
+            "条件缺少分号或括号",
+            "步长错误",
+            "scanf标识符内错误",
+            "因子中不允许调用无返回值函数",
+            "错误的函数调用格式"
+
+};
+
+
+
+
 char token[100];//用于存储目前读入的单词
 int integer;//如果读入了数字
 float floatnum;//如果读入了实数
@@ -217,7 +256,7 @@ int main()
 		printf("HERE ARE YOUR ERRORS:\n");
 		for(i = 0;i<error_index;i++)
         {
-            printf("NO.%d ERROR AT LINE %d\n",errors[i].kind,errors[i].line);
+            printf("NO.%d ERROR AT LINE %d:%s\n",errors[i].kind,errors[i].line,errorss[errors[i].kind]);
         }
 		fclose(OUT);
 		return 0;
@@ -267,7 +306,7 @@ int main()
 		printf("HERE ARE YOUR ERRORS:\n");
 		for(i = 0;i<error_index;i++)
         {
-            printf("NO.%d ERROR AT LINE %d\n",errors[i].kind,errors[i].line);
+            printf("NO.%d ERROR AT LINE %d:%s\n",errors[i].kind,errors[i].line,errorss[errors[i].kind]);
         }
 
 	}
@@ -2511,6 +2550,7 @@ int factor()
 					{
 						genERR(29,Line);
 						jump(rparent);
+						sym = getsym();
 						break;
 					}
 					if(globalTab[functT[result].begin].typ==1)
@@ -3153,7 +3193,7 @@ void interpret()
 				t--;
 				break;
             case RED:
-                printf("CodeList[p].opr1:%d\n",CodeList[p].opr1);
+                //printf("CodeList[p].opr1:%d\n",CodeList[p].opr1);
                 switch(CodeList[p].opr1)
 				{
 					case 1://全局
